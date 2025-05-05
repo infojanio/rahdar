@@ -14,73 +14,81 @@ import {
 } from 'native-base'
 import { AntDesign } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
-import { useContext, useEffect, useMemo, useState } from 'react'
-
+import { useEffect, useMemo, useState } from 'react'
 import { HomeScreen } from '@components/HomeScreen'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
-import { CartContext } from '@contexts/CartContext'
-import {
-  getCart as getCartFromStorage,
-  StorageCartProps,
-} from '@storage/storageCart'
+import { api } from '@services/api'
+import { Middleware } from 'react-native-svg'
+
+type CartItem = {
+  productId: string
+  name: string
+  image: string
+  price: number
+  quantity: number
+  cashbackPercentage: number
+}
 
 export function Cart() {
-  const { removeProductCart, updateProductQuantity } = useContext(CartContext)
-
-  const [localCartItems, setLocalCartItems] = useState<StorageCartProps[]>([])
-
+  const [cart, setCart] = useState<CartItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-
   const toast = useToast()
   const navigation = useNavigation<AppNavigatorRoutesProps>()
 
-  async function loadCartFromStorage() {
+  async function fetchCart() {
     try {
-      const stored = await getCartFromStorage()
-      setLocalCartItems(stored || [])
-    } catch {
-      toast.show({ description: 'Erro ao carregar carrinho local.' })
+      setIsLoading(true)
+      const response = await api.get('/cart')
+      setCart(response.data.items || []) // <- garante que será array
+    } catch (error) {
+      toast.show({ description: 'Erro ao buscar carrinho.' })
     } finally {
       setIsLoading(false)
     }
   }
 
-  useEffect(() => {
-    loadCartFromStorage()
-  }, [])
-
-  function handleIncrease(id: string, currentQty: number) {
-    updateProductQuantity(id, currentQty + 1)
-      .then(loadCartFromStorage)
-      .catch(() => toast.show({ description: 'Erro ao aumentar quantidade.' }))
+  async function handleIncrease(id: string, currentQty: number) {
+    await updateQuantity(id, currentQty + 1)
   }
 
-  function handleDecrease(id: string, currentQty: number) {
+  async function handleDecrease(id: string, currentQty: number) {
     if (currentQty > 1) {
-      updateProductQuantity(id, currentQty - 1)
-        .then(loadCartFromStorage)
-        .catch(() =>
-          toast.show({ description: 'Erro ao diminuir quantidade.' }),
-        )
+      await updateQuantity(id, currentQty - 1)
     }
   }
 
-  function handleRemoveItem(id: string) {
-    removeProductCart(id)
-      .then(loadCartFromStorage)
-      .catch(() => toast.show({ description: 'Erro ao remover item.' }))
+  async function updateQuantity(productId: string, quantity: number) {
+    try {
+      await api.patch('/cart/items/quantity', { productId, quantity })
+      fetchCart()
+    } catch (error) {
+      toast.show({ description: 'Erro ao atualizar quantidade.' })
+    }
   }
 
-  function handleCheckout() {
-    navigation.navigate('checkout', { cart: localCartItems })
+  async function handleRemoveItem(productId: string) {
+    try {
+      await api.delete(`/cart/items/${productId}`)
+      fetchCart()
+    } catch {
+      toast.show({ description: 'Erro ao remover item.' })
+    }
+  }
+
+  async function handleCheckout() {
+    navigation.navigate('checkout', { cart })
   }
 
   const subtotal = useMemo(() => {
-    return (localCartItems || []).reduce(
+    return (cart || []).reduce(
       (acc, item) => acc + item.quantity * item.price,
       0,
     )
-  }, [localCartItems])
+  }, [cart])
+
+  useEffect(() => {
+    fetchCart()
+  }, [])
 
   return (
     <VStack flex={1} bg="gray.100" p={2} mb={2}>
@@ -88,15 +96,14 @@ export function Cart() {
 
       {isLoading ? (
         <Spinner mt={10} />
-      ) : !localCartItems || localCartItems.length === 0 ? (
+      ) : cart.length === 0 ? (
         <Text textAlign="center" mt={10} color="gray.500">
           Seu carrinho está vazio.
         </Text>
       ) : (
         <>
           <ScrollView flex={1}>
-            {console.log('Itens do carrinho (storage):', localCartItems)}
-            {localCartItems.map((item) => (
+            {cart.map((item) => (
               <HStack
                 key={item.productId}
                 bg="white"
