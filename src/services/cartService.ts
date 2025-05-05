@@ -23,9 +23,39 @@ export type CartResponse = {
 
 // Busca o carrinho completo do usuário
 async function getCartFromBackend(): Promise<CartResponse> {
-  const response = await api.get('/cart')
+  try {
+    const response = await api.get('/cart')
+    const rawItems = response.data.cartItems
 
-  return response.data
+    const items: CartItemResponse[] = rawItems.map((item: any) => {
+      const product = item.product
+      return {
+        productId: item.productId,
+        name: product?.name || 'Produto desconhecido',
+        image: product?.image || '',
+        price: product?.price || 0,
+        quantity: item.quantity,
+        cashbackPercentage: product?.cashbackPercentage || 0,
+      }
+    })
+
+    const total = items.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0,
+    )
+    const cashbackTotal = items.reduce(
+      (acc, item) =>
+        acc + (item.price * item.quantity * item.cashbackPercentage) / 100,
+      0,
+    )
+
+    console.log('Carrinho processado:', { items, total, cashbackTotal })
+
+    return { items, total, cashbackTotal }
+  } catch (error) {
+    console.error('Erro ao buscar carrinho do backend:', error)
+    throw error
+  }
 }
 
 // Adiciona um item ao carrinho
@@ -33,8 +63,13 @@ async function addToCart(
   productId: string,
   quantity: number,
 ): Promise<CartResponse> {
-  const response = await api.post('/cart/items', { productId, quantity })
-  return response.data
+  try {
+    const response = await api.post('/cart/items', { productId, quantity })
+    return response.data
+  } catch (error) {
+    console.error('Erro ao adicionar item ao carrinho:', error)
+    throw error
+  }
 }
 
 // Atualiza a quantidade de um item no carrinho
@@ -42,29 +77,49 @@ async function updateCartItem(
   productId: string,
   quantity: number,
 ): Promise<CartResponse> {
-  const response = await api.patch('/cart/items/quantity', {
-    productId,
-    quantity,
-  })
-  return response.data
+  try {
+    const response = await api.patch('/cart/items/quantity', {
+      productId,
+      quantity,
+    })
+    return response.data
+  } catch (error) {
+    console.error('Erro ao atualizar item no carrinho:', error)
+    throw error
+  }
 }
 
 // Remove um item do carrinho
 async function removeFromCart(productId: string): Promise<CartResponse> {
-  const response = await api.delete(`/cart/items/${productId}`)
-  return response.data
+  try {
+    const response = await api.delete(`/cart/items/${productId}`)
+    return response.data
+  } catch (error) {
+    console.error('Erro ao remover item do carrinho:', error)
+    throw error
+  }
 }
 
 // Limpa todos os itens do carrinho
 async function clearCart(): Promise<{ message: string }> {
-  const response = await api.delete('/cart/clear')
-  return response.data
+  try {
+    const response = await api.delete('/cart/clear')
+    return response.data
+  } catch (error) {
+    console.error('Erro ao limpar carrinho:', error)
+    throw error
+  }
 }
 
 // Finaliza o pedido (checkout)
 async function checkoutCart(): Promise<{ success: boolean; orderId: string }> {
-  const response = await api.post('/orders')
-  return response.data
+  try {
+    const response = await api.post('/orders')
+    return response.data
+  } catch (error) {
+    console.error('Erro ao finalizar o pedido:', error)
+    throw error
+  }
 }
 
 export const cartService = {

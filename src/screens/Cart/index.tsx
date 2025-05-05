@@ -14,81 +14,62 @@ import {
 } from 'native-base'
 import { AntDesign } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useContext } from 'react'
 import { HomeScreen } from '@components/HomeScreen'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
-import { api } from '@services/api'
-import { Middleware } from 'react-native-svg'
-
-type CartItem = {
-  productId: string
-  name: string
-  image: string
-  price: number
-  quantity: number
-  cashbackPercentage: number
-}
+import { CartContext } from '@contexts/CartContext'
 
 export function Cart() {
-  const [cart, setCart] = useState<CartItem[]>([])
+  const {
+    cartItems,
+    fetchCart,
+    updateProductQuantity,
+    removeProductCart,
+  } = useContext(CartContext)
+
   const [isLoading, setIsLoading] = useState(true)
   const toast = useToast()
   const navigation = useNavigation<AppNavigatorRoutesProps>()
 
-  async function fetchCart() {
-    try {
-      setIsLoading(true)
-      const response = await api.get('/cart')
-      setCart(response.data.items || []) // <- garante que será array
-    } catch (error) {
-      toast.show({ description: 'Erro ao buscar carrinho.' })
-    } finally {
-      setIsLoading(false)
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setIsLoading(true)
+        await fetchCart()
+      } catch {
+        toast.show({ description: 'Erro ao carregar carrinho.' })
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
+    load()
+  }, [])
+
+  const subtotal = useMemo(() => {
+    return cartItems.reduce((acc, item) => acc + item.quantity * item.price, 0)
+  }, [cartItems])
 
   async function handleIncrease(id: string, currentQty: number) {
-    await updateQuantity(id, currentQty + 1)
+    await updateProductQuantity(id, currentQty + 1)
   }
 
   async function handleDecrease(id: string, currentQty: number) {
     if (currentQty > 1) {
-      await updateQuantity(id, currentQty - 1)
-    }
-  }
-
-  async function updateQuantity(productId: string, quantity: number) {
-    try {
-      await api.patch('/cart/items/quantity', { productId, quantity })
-      fetchCart()
-    } catch (error) {
-      toast.show({ description: 'Erro ao atualizar quantidade.' })
+      await updateProductQuantity(id, currentQty - 1)
     }
   }
 
   async function handleRemoveItem(productId: string) {
     try {
-      await api.delete(`/cart/items/${productId}`)
-      fetchCart()
+      await removeProductCart(productId)
     } catch {
       toast.show({ description: 'Erro ao remover item.' })
     }
   }
 
   async function handleCheckout() {
-    navigation.navigate('checkout', { cart })
+    navigation.navigate('checkout', { cart: cartItems })
   }
-
-  const subtotal = useMemo(() => {
-    return (cart || []).reduce(
-      (acc, item) => acc + item.quantity * item.price,
-      0,
-    )
-  }, [cart])
-
-  useEffect(() => {
-    fetchCart()
-  }, [])
 
   return (
     <VStack flex={1} bg="gray.100" p={2} mb={2}>
@@ -96,14 +77,14 @@ export function Cart() {
 
       {isLoading ? (
         <Spinner mt={10} />
-      ) : cart.length === 0 ? (
+      ) : cartItems.length === 0 ? (
         <Text textAlign="center" mt={10} color="gray.500">
           Seu carrinho está vazio.
         </Text>
       ) : (
         <>
           <ScrollView flex={1}>
-            {cart.map((item) => (
+            {cartItems.map((item) => (
               <HStack
                 key={item.productId}
                 bg="white"
@@ -124,7 +105,12 @@ export function Cart() {
                   />
                   <VStack>
                     <Text bold>{item.name}</Text>
-                    <Text color="gray.600">R$ {item.price.toFixed(2)}</Text>
+                    <Text color="gray.600">
+                      R${' '}
+                      {typeof item.price === 'number'
+                        ? item.price.toFixed(2)
+                        : '0,00'}
+                    </Text>
                   </VStack>
                 </HStack>
 

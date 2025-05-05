@@ -1,5 +1,3 @@
-// src/contexts/CartContext.tsx
-
 import { createContext, ReactNode, useEffect, useState } from 'react'
 import { cartService } from '@services/cartService'
 
@@ -33,31 +31,52 @@ export function CartProvider({ children }: CartProviderProps) {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
 
   async function fetchCart() {
-    const backendCart = await cartService.getCartFromBackend()
-    setCartItems(backendCart.items) // Ajuste conforme estrutura do backend
+    try {
+      const backendCart = await cartService.getCartFromBackend()
+      setCartItems(backendCart.items)
+    } catch (error) {
+      console.error('Erro ao carregar o carrinho:', error)
+      setCartItems([]) // fallback para evitar estado indefinido
+    }
   }
 
   async function addProductCart(
     item: Omit<CartItem, 'quantity'> & { quantity?: number },
   ) {
-    const quantity = item.quantity ?? 1
-    await cartService.addToCart(item.productId, quantity)
-    await fetchCart()
+    try {
+      const quantity = item.quantity ?? 1
+      await cartService.addToCart(item.productId, quantity)
+      await fetchCart()
+    } catch (error) {
+      console.error('Erro ao adicionar item ao carrinho:', error)
+    }
   }
 
   async function removeProductCart(productId: string) {
-    await cartService.removeFromCart(productId)
-    await fetchCart()
+    try {
+      await cartService.removeFromCart(productId)
+      await fetchCart()
+    } catch (error) {
+      console.error('Erro ao remover item do carrinho:', error)
+    }
   }
 
   async function updateProductQuantity(productId: string, quantity: number) {
-    await cartService.updateCartItem(productId, quantity)
-    await fetchCart()
+    try {
+      await cartService.updateCartItem(productId, quantity)
+      await fetchCart()
+    } catch (error) {
+      console.error('Erro ao atualizar quantidade do item:', error)
+    }
   }
 
   async function clearCart() {
-    await cartService.clearCart()
-    setCartItems([])
+    try {
+      await cartService.clearCart()
+      setCartItems([])
+    } catch (error) {
+      console.error('Erro ao limpar carrinho:', error)
+    }
   }
 
   useEffect(() => {
