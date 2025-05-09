@@ -20,16 +20,19 @@ export type CartResponse = {
   items: CartItemResponse[]
   total: number
   cashbackTotal: number
-  store_id: string
 }
 
 // Busca o carrinho completo do usuário
+// src/services/cartService.ts
 async function getCartFromBackend(): Promise<CartResponse> {
   try {
     const response = await api.get('/cart')
+    console.log('Resposta do backend:', response.data) // Log da resposta crua
+
     const rawItems = response.data.cartItems
 
     const items: CartItemResponse[] = rawItems.map((item: any) => {
+      console.log('Item processado:', item) // Verificando cada item
       const product = item.product
       return {
         productId: item.productId,
@@ -38,7 +41,7 @@ async function getCartFromBackend(): Promise<CartResponse> {
         price: product?.price || 0,
         quantity: item.quantity,
         cashbackPercentage: product?.cashbackPercentage || 0,
-        store_id: item.store_id,
+        storeId: product.storeId || '', // Aqui, o storeId é atribuído
       }
     })
 

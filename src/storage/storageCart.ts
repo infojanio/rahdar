@@ -10,7 +10,7 @@ export type StorageCartProps = {
   price: number
   image: string
   cashbackPercentage: number
-  store_id: string
+  storeId: string
 }
 
 // Função para obter todos os itens do carrinho no AsyncStorage

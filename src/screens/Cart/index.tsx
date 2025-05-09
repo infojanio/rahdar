@@ -73,7 +73,8 @@ export function Cart() {
       name: item.name,
       price: item.price,
       image: item.image,
-      store_id: item.storeId, // Inclua o storeId aqui
+      cashbackPercentage: item.cashbackPercentage,
+      storeId: item.storeId, // Inclua o storeId aqui
       quantity: item.quantity,
     }))
 

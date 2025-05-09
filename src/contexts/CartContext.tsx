@@ -7,8 +7,8 @@ type CartItem = {
   image: string
   price: number
   quantity: number
-  store_id: string
   cashbackPercentage: number
+  storeId: string
 }
 
 type CartContextData = {
@@ -34,7 +34,19 @@ export function CartProvider({ children }: CartProviderProps) {
   async function fetchCart() {
     try {
       const backendCart = await cartService.getCartFromBackend()
-      setCartItems(backendCart.items)
+
+      // Garante que cada item tenha o storeId corretamente
+      const formattedCart = backendCart.items.map((item: any) => ({
+        productId: item.productId,
+        name: item.name,
+        image: item.image,
+        price: item.price,
+        quantity: item.quantity,
+        cashbackPercentage: item.cashbackPercentage ?? 0,
+        storeId: item.storeId ?? '', // Garante que o storeId sempre exista
+      }))
+
+      setCartItems(formattedCart)
     } catch (error) {
       console.error('Erro ao carregar o carrinho:', error)
       setCartItems([]) // fallback para evitar estado indefinido

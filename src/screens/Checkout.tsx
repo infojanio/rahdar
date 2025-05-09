@@ -25,7 +25,7 @@ interface CartItem {
     price: number
     image: string
     cashbackPercentage: number
-    store_id: string
+    storeId: string
   }
   quantity: number
 }
@@ -42,11 +42,6 @@ export function Checkout() {
   const { user } = useAuth()
   const { cart } = route.params as CheckoutScreenRouteParams
 
-  const cashbackTotal = cartItems.reduce((sum, item) => {
-    const { cashbackPercentage, price } = item.product
-    return sum + price * item.quantity * (cashbackPercentage / 100)
-  }, 0)
-
   useEffect(() => {
     if (cart && Array.isArray(cart)) {
       const formatted = cart.map((item) => ({
@@ -58,7 +53,7 @@ export function Checkout() {
           price: item.price,
           image: item.image,
           cashbackPercentage: item.cashbackPercentage ?? 0,
-          store_id: item.store_id, // Manter store_id (snake_case)
+          storeId: item.storeId, // Garantindo que o storeId seja atribuído corretamente
         },
       }))
       setCartItems(formatted)
@@ -70,17 +65,17 @@ export function Checkout() {
 
     setLoading(true)
     try {
-      const storeId = cartItems[0]?.product?.store_id // Usar store_id corretamente
+      const storeId = cartItems[0]?.product.storeId
 
       if (!storeId) {
-        Alert.alert('Erro', 'ID da loja não encontrado. Verifique o carrinho.')
+        Alert.alert('Erro', 'Store ID não encontrado. Verifique o carrinho.')
         setLoading(false)
         return
       }
 
       const payload = {
         user_id: user.id,
-        store_id: storeId, // Manter store_id (snake_case)
+        store_id: storeId, // Agora garantido que o store_id é obtido corretamente
         items: cartItems.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -146,10 +141,6 @@ export function Checkout() {
           )}
         </Text>
 
-        <Text color="green.600" fontSize="20" fontWeight="bold">
-          Cashback: {formatCurrency(cashbackTotal)}
-        </Text>
-
         <Button
           mt={6}
           colorScheme="blue"
@@ -164,17 +155,3 @@ export function Checkout() {
     </Box>
   )
 }
-
-/*
-
-  const cashbackTotal = cartItems.reduce((sum, item) => {
-    const { cashbackPercentage, price } = item.product
-    return sum + price * item.quantity * (cashbackPercentage / 100)
-  }, 0)
-
-
-    <Text color="green.600" fontSize="20" fontWeight="bold">
-          Cashback: {formatCurrency(cashbackTotal)}
-        </Text>
-
-        */
