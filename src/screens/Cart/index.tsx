@@ -68,7 +68,16 @@ export function Cart() {
   }
 
   async function handleCheckout() {
-    navigation.navigate('checkout', { cart: cartItems })
+    const cartWithStoreId = cartItems.map((item) => ({
+      productId: item.productId,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      store_id: item.storeId, // Inclua o storeId aqui
+      quantity: item.quantity,
+    }))
+
+    navigation.navigate('checkout', { cart: cartWithStoreId })
   }
 
   return (

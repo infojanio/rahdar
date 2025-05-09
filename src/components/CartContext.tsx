@@ -6,6 +6,7 @@ interface Product {
   name: string
   price: number
   cashbackPercentage: number
+  store_id: string
   image?: string
 }
 

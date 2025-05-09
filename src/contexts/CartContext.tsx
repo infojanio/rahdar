@@ -7,6 +7,7 @@ type CartItem = {
   image: string
   price: number
   quantity: number
+  store_id: string
   cashbackPercentage: number
 }
 

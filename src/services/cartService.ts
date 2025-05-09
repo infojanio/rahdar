@@ -13,12 +13,14 @@ export type CartItemResponse = {
   price: number
   quantity: number
   cashbackPercentage: number
+  storeId: string
 }
 
 export type CartResponse = {
   items: CartItemResponse[]
   total: number
   cashbackTotal: number
+  store_id: string
 }
 
 // Busca o carrinho completo do usuário
@@ -36,6 +38,7 @@ async function getCartFromBackend(): Promise<CartResponse> {
         price: product?.price || 0,
         quantity: item.quantity,
         cashbackPercentage: product?.cashbackPercentage || 0,
+        store_id: item.store_id,
       }
     })
 
