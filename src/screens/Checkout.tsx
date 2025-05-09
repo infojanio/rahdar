@@ -16,6 +16,8 @@ import { useAuth } from '@hooks/useAuth'
 import { formatCurrency } from '@utils/format'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
 import { StorageCartProps } from '@storage/storageCart'
+import { useContext } from 'react'
+import { CartContext } from '@contexts/CartContext'
 
 interface CartItem {
   id: string
@@ -41,6 +43,7 @@ export function Checkout() {
   const route = useRoute()
   const { user } = useAuth()
   const { cart } = route.params as CheckoutScreenRouteParams
+  const { clearCart } = useContext(CartContext) // Importando a função clearCart
 
   useEffect(() => {
     if (cart && Array.isArray(cart)) {
@@ -53,7 +56,7 @@ export function Checkout() {
           price: item.price,
           image: item.image,
           cashbackPercentage: item.cashbackPercentage ?? 0,
-          storeId: item.storeId, // Garantindo que o storeId seja atribuído corretamente
+          storeId: item.storeId ?? '', // Garantindo que o storeId seja atribuído corretamente
         },
       }))
       setCartItems(formatted)
@@ -75,7 +78,7 @@ export function Checkout() {
 
       const payload = {
         user_id: user.id,
-        store_id: storeId, // Agora garantido que o store_id é obtido corretamente
+        store_id: storeId,
         items: cartItems.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -86,11 +89,24 @@ export function Checkout() {
       console.log('📩 Enviando payload:', payload)
 
       const res = await api.post('/orders', payload)
-      Alert.alert(
-        'Pedido confirmado!',
-        `Cashback: ${formatCurrency(res.data.cashbackAmount)}`,
+
+      // Calculando o cashback diretamente do carrinho
+      const cashbackToReceive = cartItems.reduce(
+        (sum, item) =>
+          sum +
+          (item.product.price *
+            item.quantity *
+            item.product.cashbackPercentage) /
+            100,
+        0,
       )
 
+      Alert.alert(
+        'Pedido confirmado!',
+        `Você receberá ${formatCurrency(cashbackToReceive)} de cashback.`,
+      )
+
+      await clearCart() // Limpando o carrinho após o pedido
       navigation.navigate('orderConfirmation', { orderId: res.data.orderId })
     } catch (err) {
       console.error('Erro ao confirmar pedido', err)
@@ -136,6 +152,21 @@ export function Checkout() {
           {formatCurrency(
             cartItems.reduce(
               (sum, item) => sum + item.product.price * item.quantity,
+              0,
+            ),
+          )}
+        </Text>
+
+        <Text fontSize="18" color="green.600">
+          Cashback esperado:{' '}
+          {formatCurrency(
+            cartItems.reduce(
+              (sum, item) =>
+                sum +
+                (item.product.price *
+                  item.quantity *
+                  item.product.cashbackPercentage) /
+                  100,
               0,
             ),
           )}

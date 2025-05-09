@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState, useContext } from 'react'
 import { HomeScreen } from '@components/HomeScreen'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
 import { CartContext } from '@contexts/CartContext'
+import { formatCurrency } from '@utils/format'
 
 export function Cart() {
   const {
@@ -115,11 +116,8 @@ export function Cart() {
                   />
                   <VStack>
                     <Text bold>{item.name}</Text>
-                    <Text color="gray.600">
-                      R${' '}
-                      {typeof item.price === 'number'
-                        ? item.price.toFixed(2)
-                        : '0,00'}
+                    <Text color="gray.500">
+                      {item.quantity}x {formatCurrency(item.price)}
                     </Text>
                   </VStack>
                 </HStack>

@@ -41,7 +41,7 @@ async function getCartFromBackend(): Promise<CartResponse> {
         price: product?.price || 0,
         quantity: item.quantity,
         cashbackPercentage: product?.cashbackPercentage || 0,
-        storeId: product.storeId || '', // Aqui, o storeId é atribuído
+        storeId: product.storeId || '15c26392-6a84-425c-b0ad-951463e27e67', // Aqui, o storeId é atribuído
       }
     })
 

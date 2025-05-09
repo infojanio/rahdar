@@ -1,6 +1,8 @@
 export function formatCurrency(value: number) {
-  return value.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  })
+  return value
+    ? value.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      })
+    : 'R$ 0,00'
 }
