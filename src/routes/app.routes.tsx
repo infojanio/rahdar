@@ -43,7 +43,7 @@ type AppRoutes = {
 
   checkout: { cart: StorageCartProps[] }
   orderConfirmation: { orderId: string } // Modificado para receber apenas o ID
-  orderHistory: undefined
+  orderHistory: undefined //
   productDetails: { productId: string }
   productBySubCategory: { categoryId: string }
   productsBySubCategory: { categoryId: string }
