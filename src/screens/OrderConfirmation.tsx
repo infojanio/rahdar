@@ -18,6 +18,19 @@ type RootStackParamList = {
   OrderConfirmation: { orderId: string }
 }
 
+interface CartItem {
+  id: string
+  product: {
+    id: string
+    name: string
+    price: number
+    image: string
+    cashbackPercentage: number
+    storeId: string
+  }
+  quantity: number
+}
+
 type OrderItem = {
   id: string
   quantity: number
@@ -36,10 +49,11 @@ type OrderData = {
   status: string
   validated_at: string | null
   createdAt: string
-  items: OrderItem[]
+  items: OrderItem[] // Agora é sempre um array
 }
 
 export default function OrderConfirmationScreen() {
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
   const route = useRoute<RouteProp<RootStackParamList, 'OrderConfirmation'>>()
   const navigation = useNavigation<AppNavigatorRoutesProps>()
   const { orderId } = route.params
@@ -49,13 +63,30 @@ export default function OrderConfirmationScreen() {
 
   useEffect(() => {
     async function fetchOrder() {
-      if (!orderId) return
+      if (!orderId) {
+        console.error('ID do pedido não fornecido.')
+        return
+      }
+
+      setLoading(true)
 
       try {
         const res = await api.get(`/orders/${orderId}`)
-        setOrder(res.data)
+        console.log('Resposta da API:', res.data) // Log para debug
+
+        if (res.data.orders && res.data.orders.length > 0) {
+          const orderData = res.data.orders[0]
+          setOrder({
+            ...orderData,
+            items: orderData.items || [],
+          })
+        } else {
+          console.error('Pedido não encontrado na resposta.')
+          setOrder(null)
+        }
       } catch (err) {
         console.error('Erro ao buscar pedido:', err)
+        setOrder(null)
       } finally {
         setLoading(false)
       }
@@ -64,21 +95,18 @@ export default function OrderConfirmationScreen() {
     fetchOrder()
   }, [orderId])
 
-  const cashbackAmount =
-    order?.items.reduce(
-      (sum, item) =>
-        sum +
-        (item.product.price * item.quantity * item.product.cashbackPercentage) /
-          100,
-      0,
-    ) || 0
-
   if (loading) {
     return <Spinner color="blue.500" mt={4} />
   }
 
   if (!order) {
-    return <Text>Pedido não encontrado.</Text>
+    return (
+      <Box flex={1} alignItems="center" justifyContent="center">
+        <Text fontSize="lg" color="gray.500">
+          Pedido não encontrado.
+        </Text>
+      </Box>
+    )
   }
 
   return (
@@ -89,32 +117,50 @@ export default function OrderConfirmationScreen() {
         </Text>
         <Text color="gray.500">ID do Pedido: {order.id}</Text>
 
-        {order.items.map((item) => (
-          <HStack key={item.id} space={4} alignItems="center">
-            <Image
-              source={{
-                uri: item.product.image || 'https://via.placeholder.com/80',
-              }}
-              alt={item.product.name}
-              size="80px"
-              borderRadius="md"
-            />
-            <VStack flex={1}>
-              <Text fontWeight="bold">{item.product.name}</Text>
-              <Text color="gray.500">
-                {item.quantity}x {formatCurrency(item.product.price)}
+        {order.items.length > 0 ? (
+          order.items.map((item) => (
+            <HStack key={item.id} space={4} alignItems="center">
+              <Image
+                source={{
+                  uri: item.product?.image || 'https://via.placeholder.com/80',
+                }}
+                alt={item.product?.name || 'Produto'}
+                size="80px"
+                borderRadius="md"
+              />
+
+              <VStack flex={1}>
+                <Text fontWeight="bold">{item.product?.name || 'Produto'}</Text>
+                <Text color="gray.500">
+                  {item.quantity}x {formatCurrency(item.product?.price || 0)}
+                </Text>
+              </VStack>
+              <Text>
+                {formatCurrency(item.quantity * (item.product?.price || 0))}
               </Text>
-            </VStack>
-            <Text>{formatCurrency(item.quantity * item.product.price)}</Text>
-          </HStack>
-        ))}
+            </HStack>
+          ))
+        ) : (
+          <Text color="red.500">Nenhum item encontrado neste pedido.</Text>
+        )}
 
         <Box mt={4} borderTopWidth={1} borderColor="gray.200" pt={4}>
           <Text fontSize="lg" fontWeight="semibold">
             Total: {formatCurrency(order.totalAmount)}
           </Text>
-          <Text mt={1} color="green.600">
-            Cashback Recebido: {formatCurrency(cashbackAmount)}
+          <Text fontSize="lg" color="green.600">
+            Cashback esperado:{' '}
+            {formatCurrency(
+              order.items.reduce(
+                (sum, item) =>
+                  sum +
+                  ((item.product?.price || 0) *
+                    item.quantity *
+                    (item.product?.cashbackPercentage || 0)) /
+                    100,
+                0,
+              ),
+            )}
           </Text>
         </Box>
 
