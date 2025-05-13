@@ -64,17 +64,27 @@ export function Checkout() {
   }, [cart])
 
   async function handleConfirmOrder() {
+    //verifica se têm usuário logado
+    if (!user?.id) {
+      Alert.alert('Erro', 'Usuário não autenticado. Faça login novamente.')
+      return
+    }
+
     if (cartItems.length === 0) return
 
     setLoading(true)
     try {
-      const storeId = cartItems[0]?.product.storeId
+      const storeIds = Array.from(
+        new Set(cartItems.map((item) => item.product.storeId)),
+      )
 
-      if (!storeId) {
-        Alert.alert('Erro', 'Store ID não encontrado. Verifique o carrinho.')
+      if (storeIds.length > 1) {
+        Alert.alert('Erro', 'Seu carrinho contém itens de diferentes lojas.')
         setLoading(false)
         return
       }
+
+      const storeId = storeIds[0]
 
       const payload = {
         user_id: user.id,
@@ -82,23 +92,42 @@ export function Checkout() {
         items: cartItems.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
-          subtotal: item.quantity * item.product.price,
+          subtotal: parseFloat((item.quantity * item.product.price).toFixed(2)),
         })),
       }
 
       console.log('📩 Enviando payload:', payload)
 
       const res = await api.post('/orders', payload)
+      console.log('Pedido criado:', res.data)
+
+      // Capturando o ID do pedido corretamente
+      const orderId = res.data?.id || res.data?.orderId
+
+      if (orderId) {
+        await clearCart()
+        navigation.navigate('orderConfirmation', { orderId })
+        console.log('✅ ID do pedido recebido:', orderId)
+      } else {
+        Alert.alert(
+          'Erro',
+          'O pedido foi criado, mas o ID não foi retornado corretamente.',
+        )
+      }
 
       // Calculando o cashback diretamente do carrinho
-      const cashbackToReceive = cartItems.reduce(
-        (sum, item) =>
-          sum +
-          (item.product.price *
-            item.quantity *
-            item.product.cashbackPercentage) /
-            100,
-        0,
+      const cashbackToReceive = parseFloat(
+        cartItems
+          .reduce(
+            (sum, item) =>
+              sum +
+              (item.product.price *
+                item.quantity *
+                item.product.cashbackPercentage) /
+                100,
+            0,
+          )
+          .toFixed(2),
       )
 
       Alert.alert(
@@ -107,7 +136,6 @@ export function Checkout() {
       )
 
       await clearCart() // Limpando o carrinho após o pedido
-      navigation.navigate('orderConfirmation', { orderId: res.data.orderId })
     } catch (err) {
       console.error('Erro ao confirmar pedido', err)
       Alert.alert('Erro', 'Não foi possível confirmar o pedido')

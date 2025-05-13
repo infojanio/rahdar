@@ -29,6 +29,7 @@ import { Category } from '@components/Category'
 import { ProductsBySubCategory } from '@screens/Product/ProductsBySubCategory'
 import OrderConfirmation from '@screens/OrderConfirmation'
 import { StorageCartProps } from '@storage/storageCart'
+import { OrderHistory } from '@screens/OrderHistory'
 
 type AppRoutes = {
   home: { userId: string }
@@ -41,7 +42,8 @@ type AppRoutes = {
   signUp: undefined
 
   checkout: { cart: StorageCartProps[] }
-  orderConfirmation: { orderId: string }
+  orderConfirmation: { orderId: string } // Modificado para receber apenas o ID
+  orderHistory: undefined
   productDetails: { productId: string }
   productBySubCategory: { categoryId: string }
   productsBySubCategory: { categoryId: string }
@@ -117,8 +119,8 @@ export function AppRoutes() {
         }}
       />
       <Screen
-        name="request"
-        component={Request}
+        name="orderHistory"
+        component={OrderHistory}
         options={{
           title: 'Pedidos',
           headerStyle: {
@@ -161,6 +163,7 @@ export function AppRoutes() {
       <Screen
         name="orderConfirmation"
         component={OrderConfirmation}
+        //initialParams={{ orderId: '' }} // Definindo um valor inicial para evitar erro
         options={{
           tabBarButton: () => null, // oculta da tab bar
         }}

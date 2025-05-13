@@ -35,6 +35,7 @@ type Product = {
   image: string
   cashbackPercentage: number
   store: {
+    id: string
     name: string
   }
 }
@@ -94,6 +95,7 @@ export function ProductDetails() {
       price: product.price,
       quantity: 1,
       cashbackPercentage: product.cashbackPercentage,
+      storeId: product.store.id,
     })
 
     toast.show({

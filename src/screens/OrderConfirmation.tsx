@@ -32,10 +32,11 @@ type OrderItem = {
 
 type OrderData = {
   id: string
-  total: number
-  cashbackAmount: number
-  items: OrderItem[]
+  totalAmount: number
+  status: string
+  validated_at: string | null
   createdAt: string
+  items: OrderItem[]
 }
 
 export default function OrderConfirmationScreen() {
@@ -48,6 +49,8 @@ export default function OrderConfirmationScreen() {
 
   useEffect(() => {
     async function fetchOrder() {
+      if (!orderId) return
+
       try {
         const res = await api.get(`/orders/${orderId}`)
         setOrder(res.data)
@@ -59,15 +62,23 @@ export default function OrderConfirmationScreen() {
     }
 
     fetchOrder()
-  }, [])
+  }, [orderId])
 
-  if (loading || !order) {
-    return (
-      <Box flex={1} justifyContent="center" alignItems="center" bg="white">
-        <Spinner color="blue.500" />
-        <Text mt={4}>Carregando pedido...</Text>
-      </Box>
-    )
+  const cashbackAmount =
+    order?.items.reduce(
+      (sum, item) =>
+        sum +
+        (item.product.price * item.quantity * item.product.cashbackPercentage) /
+          100,
+      0,
+    ) || 0
+
+  if (loading) {
+    return <Spinner color="blue.500" mt={4} />
+  }
+
+  if (!order) {
+    return <Text>Pedido não encontrado.</Text>
   }
 
   return (
@@ -81,7 +92,9 @@ export default function OrderConfirmationScreen() {
         {order.items.map((item) => (
           <HStack key={item.id} space={4} alignItems="center">
             <Image
-              source={{ uri: item.product.image }}
+              source={{
+                uri: item.product.image || 'https://via.placeholder.com/80',
+              }}
               alt={item.product.name}
               size="80px"
               borderRadius="md"
@@ -98,19 +111,19 @@ export default function OrderConfirmationScreen() {
 
         <Box mt={4} borderTopWidth={1} borderColor="gray.200" pt={4}>
           <Text fontSize="lg" fontWeight="semibold">
-            Total: {formatCurrency(order.total)}
+            Total: {formatCurrency(order.totalAmount)}
           </Text>
           <Text mt={1} color="green.600">
-            Cashback: {formatCurrency(order.cashbackAmount)}
+            Cashback Recebido: {formatCurrency(cashbackAmount)}
           </Text>
         </Box>
 
         <Button
           mt={6}
           colorScheme="blue"
-          onPress={() => navigation.navigate('cart')}
+          onPress={() => navigation.navigate('orderHistory')}
         >
-          Voltar ao Início
+          Ver Histórico de Pedidos
         </Button>
       </VStack>
     </ScrollView>

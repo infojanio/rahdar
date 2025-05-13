@@ -46,7 +46,7 @@ export function Category() {
       //const response = await api.get('/categories/category/?category_id=${categoryId}')
 
       setCategories(response.data)
-      console.log(response.data)
+      // console.log(response.data)
     } catch (error) {
       const isAppError = error instanceof AppError
       const title = isAppError
