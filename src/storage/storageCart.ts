@@ -13,6 +13,17 @@ export type StorageCartProps = {
   storeId: string
 }
 
+export type StorageOrderProps = {
+  productId: string
+  name: string
+  quantity: number
+  price: number
+  image: string
+  cashbackPercentage: number
+  storeId: string
+}
+
+
 // Função para obter todos os itens do carrinho no AsyncStorage
 export async function storageProductGetAll(): Promise<StorageCartProps[]> {
   try {

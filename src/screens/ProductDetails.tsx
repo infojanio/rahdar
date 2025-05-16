@@ -138,8 +138,8 @@ export function ProductDetails() {
               <Text fontSize="20" fontWeight="bold" color="red.600">
                 R$ {product.price.toFixed(2)}
               </Text>
-              <Text fontSize="md" color="green.600" fontWeight="medium">
-                Cashback: R$ {product.cashbackPercentage.toFixed(2)}
+              <Text fontSize="16" color="green.600" fontWeight="medium">
+                {product.cashbackPercentage }%  de cashback
               </Text>
             </HStack>
 
