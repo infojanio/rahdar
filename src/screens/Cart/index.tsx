@@ -19,15 +19,16 @@ import { CartContext } from '@contexts/CartContext'
 import { formatCurrency } from '@utils/format'
 
 export function Cart() {
-  const { 
-    cartItems, 
+  const {
+    cartItems,
     stockInfo,
     updateProductQuantity,
     removeProductCart,
     fetchCart,
-    getAvailableStock
+    getAvailableStock,
+    getStockCalculation,
   } = useContext(CartContext)
-  
+
   const toast = useToast()
   const navigation = useNavigation<AppNavigatorRoutesProps>()
   const [isLoading, setIsLoading] = useState(true)
@@ -45,7 +46,7 @@ export function Cart() {
         setIsLoading(false)
       }
     }
-    
+
     loadCart()
   }, [])
 
@@ -78,43 +79,43 @@ export function Cart() {
   const handleQuantityChange = async (id: string, newQuantity: number) => {
     if (newQuantity < 1) return
 
-    setIsUpdating(prev => ({ ...prev, [id]: true }))
-    
+    setIsUpdating((prev) => ({ ...prev, [id]: true }))
+
     try {
       const availableStock = getAvailableStock(id)
-      const currentItem = cartItems.find(item => item.productId === id)
-      
+      const currentItem = cartItems.find((item) => item.productId === id)
+
       if (!currentItem) return
-      
+
       const quantityDifference = newQuantity - currentItem.quantity
-      
+
       if (quantityDifference > availableStock) {
         showWarningToast(
           'Estoque insuficiente',
-          `Você pode adicionar mais ${availableStock} unidades`
+          `Você pode adicionar mais ${availableStock} unidades`,
         )
         return
       }
-      
+
       await updateProductQuantity(id, newQuantity)
     } catch (error) {
       showErrorToast('Não foi possível atualizar a quantidade')
     } finally {
-      setIsUpdating(prev => ({ ...prev, [id]: false }))
+      setIsUpdating((prev) => ({ ...prev, [id]: false }))
     }
   }
 
   const handleIncrease = async (id: string, currentQty: number) => {
     const availableStock = getAvailableStock(id)
-    
+
     if (availableStock <= 0) {
       showWarningToast(
         'Estoque esgotado',
-        'Não há mais unidades disponíveis deste produto'
+        'Não há mais unidades disponíveis deste produto',
       )
       return
     }
-    
+
     await handleQuantityChange(id, currentQty + 1)
   }
 
@@ -133,14 +134,14 @@ export function Cart() {
   }
 
   const handleCheckout = async () => {
-    const outOfStockItems = cartItems.filter(item => {
+    const outOfStockItems = cartItems.filter((item) => {
       const stockData = stockInfo[item.productId]
       return !stockData || item.quantity > stockData.totalStock
     })
 
     if (outOfStockItems.length > 0) {
       const errorMessage = outOfStockItems
-        .map(item => {
+        .map((item) => {
           const stockData = stockInfo[item.productId]
           return `${item.name} (Disponível: ${stockData?.totalStock || 0})`
         })
@@ -148,13 +149,13 @@ export function Cart() {
 
       showWarningToast(
         'Ajuste seu carrinho',
-        `Estoque insuficiente:\n${errorMessage}`
+        `Estoque insuficiente:\n${errorMessage}`,
       )
       return
     }
 
-    navigation.navigate('checkout', { 
-      cart: cartItems.map(item => ({
+    navigation.navigate('checkout', {
+      cart: cartItems.map((item) => ({
         productId: item.productId,
         name: item.name,
         price: item.price,
@@ -162,7 +163,7 @@ export function Cart() {
         cashbackPercentage: item.cashbackPercentage,
         storeId: item.storeId,
         quantity: item.quantity,
-      }))
+      })),
     })
   }
 
@@ -196,9 +197,17 @@ export function Cart() {
             <Text color="gray.500">
               {item.quantity}x {formatCurrency(item.price)}
             </Text>
-            <Text fontSize="xs" color={isMaxQuantityReached ? 'red.500' : 'gray.500'}>
-              {totalStock > 0 ? `Disponível: ${totalStock}` : 'Sem estoque'}
+      
+            <Text
+              fontSize="xs"
+              color={isMaxQuantityReached ? 'red.500' : 'gray.500'}
+            >
+              {availableStock > 0
+                ? `Disponível: ${availableStock}`
+                : 'Sem estoque'}
             </Text>
+
+   
           </VStack>
         </HStack>
 

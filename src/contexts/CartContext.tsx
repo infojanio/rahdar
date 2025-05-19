@@ -15,6 +15,7 @@ type CartItem = {
 type StockInfo = {
   totalStock: number
   reservedInCart: number
+  availableToAdd: number // Novo campo
 }
 
 type CartContextData = {
@@ -22,18 +23,21 @@ type CartContextData = {
   stockInfo: Record<string, StockInfo>
   addProductCart: (
     item: Omit<CartItem, 'quantity'> & { quantity?: number },
-    availableStock?: number
+    availableStock?: number,
   ) => Promise<void>
   removeProductCart: (productId: string) => Promise<void>
   updateProductQuantity: (
-    productId: string, 
+    productId: string,
     quantity: number,
-    availableStock?: number
+    availableStock?: number,
   ) => Promise<void>
   clearCart: () => Promise<void>
   fetchCart: () => Promise<void>
   fetchProductStock: (productId: string) => Promise<number>
   getAvailableStock: (productId: string) => number
+  getStockCalculation: (
+    productId: string,
+  ) => { total: number; inCart: number; available: number } // Nova função
 }
 
 export const CartContext = createContext({} as CartContextData)
@@ -62,7 +66,7 @@ export function CartProvider({ children }: CartProviderProps) {
       }))
 
       setCartItems(formattedCart)
-      
+
       // Carrega o estoque para todos os itens do carrinho
       await loadStockInfo(formattedCart)
     } catch (error) {
@@ -74,28 +78,32 @@ export function CartProvider({ children }: CartProviderProps) {
   // Carrega informações de estoque para os produtos
   async function loadStockInfo(items: CartItem[]) {
     const newStockInfo: Record<string, StockInfo> = {}
-    
+
     await Promise.all(
       items.map(async (item) => {
         try {
           const stock = await fetchProductStock(item.productId)
           newStockInfo[item.productId] = {
             totalStock: stock,
-            reservedInCart: item.quantity
+            reservedInCart: item.quantity,
+            availableToAdd: Math.max(stock - item.quantity, 0), // Cálculo aqui
           }
         } catch (error) {
-          console.error(`Erro ao carregar estoque do produto ${item.productId}:`, error)
+          console.error(
+            `Erro ao carregar estoque do produto ${item.productId}:`,
+            error,
+          )
           newStockInfo[item.productId] = {
             totalStock: 0,
-            reservedInCart: item.quantity
+            reservedInCart: item.quantity,
+            availableToAdd: 0,
           }
         }
-      })
+      }),
     )
-    
+
     setStockInfo(newStockInfo)
   }
-
   // Busca o estoque de um produto específico
   async function fetchProductStock(productId: string): Promise<number> {
     try {
@@ -107,28 +115,38 @@ export function CartProvider({ children }: CartProviderProps) {
     }
   }
 
+  function getStockCalculation(productId: string) {
+    const info = stockInfo[productId]
+    if (!info) return { total: 0, inCart: 0, available: 0 }
+
+    return {
+      total: info.totalStock,
+      inCart: info.reservedInCart,
+      available: info.availableToAdd,
+    }
+  }
+
   // Calcula o estoque disponível
   function getAvailableStock(productId: string): number {
     const info = stockInfo[productId]
     if (!info) return 0
-    return Math.max(info.totalStock - info.reservedInCart, 0)
+    return info.availableToAdd // Agora retornamos o valor pré-calculado
   }
-
   // Adiciona produto ao carrinho com verificação de estoque
   async function addProductCart(
     item: Omit<CartItem, 'quantity'> & { quantity?: number },
-    availableStock?: number
+    availableStock?: number,
   ) {
     try {
       const quantity = item.quantity ?? 1
-      
+
       // Verifica estoque se disponível
       if (availableStock !== undefined && quantity > availableStock) {
         throw new Error('Estoque insuficiente')
       }
 
       await cartService.addToCart(item.productId, quantity)
-      
+
       // Atualiza o carrinho e estoque
       await fetchCart()
     } catch (error) {
@@ -141,9 +159,9 @@ export function CartProvider({ children }: CartProviderProps) {
   async function removeProductCart(productId: string) {
     try {
       await cartService.removeFromCart(productId)
-      
+
       // Atualiza o carrinho e remove do controle de estoque
-      setStockInfo(prev => {
+      setStockInfo((prev) => {
         const { [productId]: _, ...rest } = prev
         return rest
       })
@@ -156,40 +174,47 @@ export function CartProvider({ children }: CartProviderProps) {
 
   // Atualiza quantidade com verificação de estoque
   async function updateProductQuantity(
-    productId: string, 
+    productId: string,
     quantity: number,
-    availableStock?: number
+    availableStock?: number,
   ) {
     try {
-      // Verifica estoque se disponível
       if (availableStock !== undefined) {
-        const currentItem = cartItems.find(item => item.productId === productId)
+        const currentItem = cartItems.find(
+          (item) => item.productId === productId,
+        )
         const quantityDifference = quantity - (currentItem?.quantity ?? 0)
-        
+
         if (quantityDifference > availableStock) {
           throw new Error('Estoque insuficiente')
         }
       }
 
       await cartService.updateCartItem(productId, quantity)
-      
-      // Atualiza o estoque reservado
-      setStockInfo(prev => ({
+
+      // Atualiza o estoque reservado E o disponível
+      setStockInfo((prev) => ({
         ...prev,
         [productId]: {
           ...prev[productId],
-          reservedInCart: quantity
-        }
+          reservedInCart: quantity,
+          availableToAdd: Math.max(
+            (prev[productId]?.totalStock || 0) - quantity,
+            0,
+          ),
+        },
       }))
-      
-      // Atualiza o carrinho
-      await fetchCart()
+
+      setCartItems((prevItems) =>
+        prevItems.map((item) =>
+          item.productId === productId ? { ...item, quantity } : item,
+        ),
+      )
     } catch (error) {
       console.error('Erro ao atualizar quantidade do item:', error)
       throw error
     }
   }
-
   // Limpa o carrinho completamente
   async function clearCart() {
     try {
@@ -219,6 +244,7 @@ export function CartProvider({ children }: CartProviderProps) {
         fetchCart,
         fetchProductStock,
         getAvailableStock,
+        getStockCalculation, // Adicionado aqui
       }}
     >
       {children}
