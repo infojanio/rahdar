@@ -8,6 +8,8 @@ import {
   Image,
   Button,
   Spinner,
+  Badge,
+  Divider,
 } from 'native-base'
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'
 import { api } from '@services/api'
@@ -18,42 +20,30 @@ type RootStackParamList = {
   OrderConfirmation: { orderId: string }
 }
 
-interface CartItem {
+interface Product {
   id: string
-  product: {
-    id: string
-    name: string
-    price: number
-    image: string
-    cashbackPercentage: number
-    storeId: string
-  }
-  quantity: number
+  name: string
+  price: number
+  image: string
+  cashbackPercentage: number
 }
 
-type OrderItem = {
+interface OrderItem {
   id: string
   quantity: number
-  product: {
-    id: string
-    name: string
-    price: number
-    image: string
-    cashbackPercentage: number
-  }
+  product: Product
 }
 
-type OrderData = {
+interface OrderData {
   id: string
   totalAmount: number
   status: string
   validated_at: string | null
   createdAt: string
-  items: OrderItem[] // Agora é sempre um array
+  items: OrderItem[]
 }
 
-export default function OrderConfirmationScreen() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
+export function OrderConfirmation() {
   const route = useRoute<RouteProp<RootStackParamList, 'OrderConfirmation'>>()
   const navigation = useNavigation<AppNavigatorRoutesProps>()
   const { orderId } = route.params
@@ -72,18 +62,42 @@ export default function OrderConfirmationScreen() {
 
       try {
         const res = await api.get(`/orders/${orderId}`)
-        console.log('Resposta da API:', res.data) // Log para debug
+        console.log('Resposta da API:', res.data.orders?.[0])
 
-        if (res.data.orders && res.data.orders.length > 0) {
-          const orderData = res.data.orders[0]
-          setOrder({
-            ...orderData,
-            items: orderData.items || [],
-          })
-        } else {
-          console.error('Pedido não encontrado na resposta.')
-          setOrder(null)
+        // Ajuste para a estrutura de resposta esperada
+        const orderData = res.data.orders?.[0] // Acessa o primeiro pedido do array
+
+        if (!orderData) {
+          throw new Error('Pedido não encontrado na resposta')
         }
+
+        setOrder({
+          id: orderData.id,
+          totalAmount: orderData.totalAmount,
+          status: orderData.status,
+          validated_at: orderData.validated_at,
+          createdAt: orderData.createdAt,
+          items: orderData.items.map((item: any) => ({
+            id: item.id || Math.random().toString(36).substring(7), // ID fallback
+            quantity: item.quantity,
+            product: {
+              id: item.product?.id || item.productId?.id || '',
+              name:
+                item.product?.name ||
+                item.productId?.name ||
+                'Produto desconhecido',
+              price: item.product?.price || item.productId?.price || 0,
+              image:
+                item.product?.image ||
+                item.productId?.image ||
+                'https://via.placeholder.com/80',
+              cashbackPercentage:
+                item.product?.cashbackPercentage ||
+                item.productId?.cashbackPercentage ||
+                0,
+            },
+          })),
+        })
       } catch (err) {
         console.error('Erro ao buscar pedido:', err)
         setOrder(null)
@@ -95,74 +109,134 @@ export default function OrderConfirmationScreen() {
     fetchOrder()
   }, [orderId])
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'warning'
+      case 'VALIDATED':
+        return 'success'
+      case 'EXPIRED':
+        return 'error'
+      default:
+        return 'coolGray'
+    }
+  }
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'Pendente'
+      case 'VALIDATED':
+        return 'Validado'
+      case 'EXPIRED':
+        return 'Expirado'
+      default:
+        return status
+    }
+  }
+
   if (loading) {
-    return <Spinner color="blue.500" mt={4} />
+    return <Spinner size="lg" mt={8} />
   }
 
   if (!order) {
     return (
-      <Box flex={1} alignItems="center" justifyContent="center">
+      <Box flex={1} alignItems="center" justifyContent="center" p={4}>
         <Text fontSize="lg" color="gray.500">
-          Pedido não encontrado.
+          Pedido não encontrado ou erro ao carregar.
         </Text>
+        <Button mt={4} onPress={() => navigation.goBack()}>
+          Voltar
+        </Button>
       </Box>
     )
   }
 
+  const calculateTotalCashback = () => {
+    return order.items.reduce((total, item) => {
+      return (
+        total +
+        (item.product.price * item.quantity * item.product.cashbackPercentage) /
+          100
+      )
+    }, 0)
+  }
+
   return (
-    <ScrollView flex={1} bg="white" px={4} py={6}>
-      <VStack space={4}>
-        <Text fontSize="2xl" fontWeight="bold">
-          Pedido Confirmado!
+    <ScrollView flex={1} bg="gray.50" p={4}>
+      <VStack space={4} bg="white" p={4} borderRadius="md" shadow={1}>
+        <HStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="xl" fontWeight="bold">
+            Pedido Confirmado!
+          </Text>
+          <Badge colorScheme={getStatusColor(order.status)}>
+            {getStatusText(order.status)}
+          </Badge>
+        </HStack>
+
+        <Text color="gray.500">
+          Número do pedido: #{order.id.substring(0, 8).toUpperCase()}
         </Text>
-        <Text color="gray.500">ID do Pedido: {order.id}</Text>
+        <Text color="gray.500">
+          Data: {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+        </Text>
+
+        <Divider my={3} />
+
+        <Text fontSize="lg" fontWeight="bold" mb={2}>
+          Itens do Pedido
+        </Text>
 
         {order.items.length > 0 ? (
-          order.items.map((item) => (
-            <HStack key={item.id} space={4} alignItems="center">
-              <Image
-                source={{
-                  uri: item.product?.image || 'https://via.placeholder.com/80',
-                }}
-                alt={item.product?.name || 'Produto'}
-                size="80px"
-                borderRadius="md"
-              />
-
-              <VStack flex={1}>
-                <Text fontWeight="bold">{item.product?.name || 'Produto'}</Text>
-                <Text color="gray.500">
-                  {item.quantity}x {formatCurrency(item.product?.price || 0)}
-                </Text>
-              </VStack>
-              <Text>
-                {formatCurrency(item.quantity * (item.product?.price || 0))}
-              </Text>
-            </HStack>
-          ))
+          <VStack space={4}>
+            {order.items.map((item) => (
+              <HStack
+                key={`${item.id}-${item.product.id}`}
+                space={3}
+                alignItems="center"
+              >
+                <Image
+                  source={{
+                    uri: item.product.image || 'https://via.placeholder.com/80',
+                  }}
+                  alt={item.product.name}
+                  size="sm"
+                  borderRadius="md"
+                />
+                <VStack flex={1}>
+                  <Text fontWeight="bold">{item.product.name}</Text>
+                  <HStack justifyContent="space-between">
+                    <Text color="gray.500">
+                      {item.quantity}x {formatCurrency(item.product.price)}
+                    </Text>
+                    <Text color="green.600" fontSize={'16'} fontWeight={'bold'}>
+                      {item.product.cashbackPercentage}% cashback
+                    </Text>
+                  </HStack>
+                </VStack>
+              </HStack>
+            ))}
+          </VStack>
         ) : (
-          <Text color="red.500">Nenhum item encontrado neste pedido.</Text>
+          <Text color="gray.500" textAlign="center" py={4}>
+            Nenhum item encontrado neste pedido.
+          </Text>
         )}
 
-        <Box mt={4} borderTopWidth={1} borderColor="gray.200" pt={4}>
-          <Text fontSize="lg" fontWeight="semibold">
-            Total: {formatCurrency(order.totalAmount)}
-          </Text>
-          <Text fontSize="lg" color="green.600">
-            Cashback esperado:{' '}
-            {formatCurrency(
-              order.items.reduce(
-                (sum, item) =>
-                  sum +
-                  ((item.product?.price || 0) *
-                    item.quantity *
-                    (item.product?.cashbackPercentage || 0)) /
-                    100,
-                0,
-              ),
-            )}
-          </Text>
-        </Box>
+        <Divider my={3} />
+
+        <VStack space={2}>
+          <HStack justifyContent="space-between">
+            <Text fontWeight="bold">Total do Pedido:</Text>
+            <Text>{formatCurrency(order.totalAmount)}</Text>
+          </HStack>
+          <HStack justifyContent="space-between">
+            <Text fontWeight="bold">Cashback Total:</Text>
+            <Text color="green.600" fontSize={'16'}>
+              {formatCurrency(calculateTotalCashback())}
+            </Text>
+          </HStack>
+        </VStack>
 
         <Button
           mt={6}

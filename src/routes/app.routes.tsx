@@ -27,9 +27,10 @@ import { ProductBySubCategory } from '@screens/Product/ProductBySubCategory'
 
 import { Category } from '@components/Category'
 import { ProductsBySubCategory } from '@screens/Product/ProductsBySubCategory'
-import OrderConfirmation from '@screens/OrderConfirmation'
+
 import { StorageCartProps } from '@storage/storageCart'
 import { OrderHistory } from '@screens/OrderHistory'
+import { OrderConfirmation } from '@screens/OrderConfirmation'
 
 type AppRoutes = {
   home: { userId: string }
