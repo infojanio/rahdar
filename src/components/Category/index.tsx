@@ -41,12 +41,12 @@ export function Category() {
     try {
       setIsLoading(true)
       //const response = await api.get(`/companies/company/?company_id=${companyId}`,
-      const response = await api.get(`/categories`)
+      const response = await api.get('/categories')
 
       //const response = await api.get('/categories/category/?category_id=${categoryId}')
 
+     // console.log("Categorias:",response.data)
       setCategories(response.data)
-      // console.log(response.data)
     } catch (error) {
       const isAppError = error instanceof AppError
       const title = isAppError
