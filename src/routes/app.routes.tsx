@@ -30,6 +30,7 @@ import { ProductsBySubCategory } from '@screens/Product/ProductsBySubCategory'
 import OrderConfirmation from '@screens/OrderConfirmation'
 import { StorageCartProps } from '@storage/storageCart'
 import { OrderHistory } from '@screens/OrderHistory'
+import {SearchProducts} from '@screens/SearchProducts'
 
 type AppRoutes = {
   home: { userId: string }
@@ -41,6 +42,7 @@ type AppRoutes = {
   productList: undefined
   signUp: undefined
 
+  searchProducts: {productId: string}
   checkout: { cart: StorageCartProps[] }
   orderConfirmation: { orderId: string } // Modificado para receber apenas o ID
   orderHistory: undefined //
@@ -89,8 +91,8 @@ export function AppRoutes() {
         }}
       />
       <Screen
-        name="search"
-        component={Search}
+        name="searchProducts"
+        component={SearchProducts}
         options={{
           title: 'Pesquisar',
           headerShown: false,

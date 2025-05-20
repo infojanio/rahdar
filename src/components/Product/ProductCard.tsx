@@ -12,11 +12,11 @@ export function ProductCard({ product, ...rest }: ProductCardProps) {
   return (
     <TouchableOpacity {...rest}>
       <VStack
-        mr={3}
+        mr={1}
         mt={3}
         bg="white"
         alignItems={'normal'}
-        w={160}
+        w={150}
         h={180}
         minW={24}
         rounded="md"

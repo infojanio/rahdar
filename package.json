@@ -29,6 +29,7 @@
     "expo-updates": "~0.26.10",
     "framer-motion": "^12.9.2",
     "install": "^0.13.0",
+    "lodash.debounce": "^4.0.8",
     "moti": "^0.30.0",
     "native-base": "^3.4.28",
     "npm": "^9.2.0",
@@ -55,6 +56,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@types/lodash.debounce": "^4.0.9",
     "@types/react": "~18.3.12",
     "@types/react-native": "~0.70.6",
     "@types/react-native-extra-dimensions-android": "^1.2.3",

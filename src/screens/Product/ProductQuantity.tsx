@@ -25,7 +25,7 @@ export function ProductQuantity() {
   async function fetchProductByQuantity() {
     try {
       setIsLoading(true)
-
+ 
       const response = await api.get('/products/quantity')
       setProducts(response.data)
     } catch (error) {
@@ -95,7 +95,7 @@ export function ProductQuantity() {
           )}
           numColumns={1}
           _contentContainerStyle={{
-            marginLeft: 2,
+            marginLeft: 3,
             paddingBottom: 32,
           }}
           horizontal
