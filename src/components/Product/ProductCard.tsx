@@ -13,15 +13,15 @@ export function ProductCard({ product, ...rest }: ProductCardProps) {
     <TouchableOpacity {...rest}>
       <VStack
         mr={1}
-        mt={1}
+        mt={3}
         bg="white"
         alignItems={'normal'}
-        w={32}
-        h={172}
+        w={150}
+        h={180}
         minW={24}
         rounded="md"
         mb="1"
-        borderWidth={1.2}
+        borderWidth={3.5}
         borderColor={'gray.100'}
       >
         <Center>

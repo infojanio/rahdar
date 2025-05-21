@@ -95,7 +95,7 @@ export function ProductQuantity() {
           )}
           numColumns={1}
           _contentContainerStyle={{
-            marginLeft: 2,
+            marginLeft: 3,
             paddingBottom: 32,
           }}
           horizontal

@@ -197,25 +197,13 @@ export function Cart() {
             <Text color="gray.500">
               {item.quantity}x {formatCurrency(item.price)}
             </Text>
-            <Text
-              fontSize="xs"
-              color={isMaxQuantityReached ? 'red.500' : 'gray.500'}
-            >
-              {totalStock > 0 ? `Disponível: ${totalStock}` : 'Sem estoque'}
-            </Text>
-            <Text
-              fontSize="xs"
-              color={isMaxQuantityReached ? 'red.500' : 'gray.500'}
-            >
-              {totalStock > 0 ? `Disponível: ${totalStock}` : 'Sem estoque'}
-            </Text>
 
             <Text
               fontSize="xs"
               color={isMaxQuantityReached ? 'red.500' : 'gray.500'}
             >
               {availableStock > 0
-                ? `Estoque: ${availableStock}`
+                ? `Disponível: ${availableStock}`
                 : 'Sem estoque'}
             </Text>
           </VStack>
