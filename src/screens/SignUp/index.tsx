@@ -8,7 +8,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { VStack, Center, Text, Icon, IconButton, useToast } from 'native-base'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
 
-import { Input } from '@components/Input/index'
+import { Input } from '@components/Input'
 import { Button } from '@components/Button'
 import { StackNavigatorRoutesProps } from '@routes/stack.routes'
 import { AppError } from '@utils/AppError'

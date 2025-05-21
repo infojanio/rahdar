@@ -1,36 +1,101 @@
-import { Input as NBInput, IInputProps, Icon } from 'native-base'
-import { MaterialIcons } from '@expo/vector-icons'
+import React, { forwardRef } from 'react'
+import { TextInput, View, Text, StyleSheet, TextInputProps } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons' // ou qualquer ícone que você use
 
-type Props = IInputProps & {
-  iconName?: keyof typeof MaterialIcons.glyphMap
-}
+type InputProps = {
+  label?: string
+  icon?: React.ReactNode
+  leftIcon?: JSX.Element
+  rightIcon?: JSX.Element
 
-export function Input({ iconName, ...rest }: Props) {
-  return (
-    <NBInput
-      bg="gray.100"
-      h={12}
-      px={4}
-      borderWidth={0}
-      fontSize="md"
-      color="gray.700"
-      placeholderTextColor="gray.400"
-      _focus={{
-        bg: 'gray.100',
-        borderWidth: 1,
-        borderColor: 'green.500',
-      }}
-      InputLeftElement={
-        iconName ? (
-          <Icon
-            as={<MaterialIcons name={iconName} />}
-            size={5}
-            ml={2}
-            color="gray.400"
+  value: string
+  onChangeText: (text: string) => void
+  placeholder: string
+  secureTextEntry?: boolean
+  errorMessage?: string
+  onFocus?: () => void
+  keyboardType?:
+    | 'default'
+    | 'email-address'
+    | 'numeric'
+    | 'phone-pad'
+    | 'decimal-pad'
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
+  returnKeyType?: 'done' | 'next' | 'go' | 'search' | 'send'
+  onSubmitEditing?: () => void
+} & React.ComponentProps<typeof TextInput>
+
+export const Input = forwardRef<TextInput, InputProps>(
+  (
+    {
+      value,
+      onChangeText,
+      placeholder,
+      secureTextEntry = false,
+      errorMessage,
+      onFocus,
+      keyboardType = 'default',
+      autoCapitalize = 'sentences',
+      returnKeyType = 'done',
+      onSubmitEditing,
+      leftIcon,
+      rightIcon,
+    },
+    ref,
+  ) => {
+    return (
+      <View style={styles.container}>
+        <View style={styles.inputContainer}>
+          {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
+          <TextInput
+            ref={ref}
+            style={[styles.input, errorMessage ? styles.inputError : {}]}
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            secureTextEntry={secureTextEntry}
+            onFocus={onFocus}
+            keyboardType={keyboardType}
+            autoCapitalize={autoCapitalize}
+            returnKeyType={returnKeyType}
+            onSubmitEditing={onSubmitEditing}
           />
-        ) : undefined
-      }
-      {...rest}
-    />
-  )
-}
+          {rightIcon && <View style={styles.iconContainer}>{rightIcon}</View>}
+        </View>
+        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+      </View>
+    )
+  },
+)
+
+Input.displayName = 'Input'
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 10,
+  },
+  inputContainer: {
+    flexDirection: 'row', // Garantir que os ícones e o input fiquem na mesma linha
+    alignItems: 'center', // Alinhar o conteúdo verticalmente
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    height: 40,
+  },
+  input: {
+    flex: 1, // O campo de texto ocupa o espaço restante
+    paddingLeft: 10,
+  },
+  iconContainer: {
+    marginLeft: 10, // Adiciona espaçamento ao redor do ícone
+    marginRight: 10,
+  },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 5,
+  },
+})
