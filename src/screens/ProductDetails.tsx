@@ -50,11 +50,6 @@ export function ProductDetails() {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
 
-  //voltar a tela anterior
-  function handleGoBack() {
-    navigation.goBack()
-  }
-
   useEffect(() => {
     async function fetchProduct() {
       try {

@@ -11,7 +11,7 @@ import {
   Image,
   Alert,
 } from 'react-native'
-import { Input } from '@components/Input/index' // Seu componente Input estilizado
+import { Input } from '@components/Input' // Seu componente Input estilizado
 import MarketPng from '@assets/rahdar.png'
 import LoginSvg from '@assets/login.svg'
 import { useNavigation } from '@react-navigation/native'
