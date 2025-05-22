@@ -21,7 +21,7 @@ export function HomeHeader() {
 
   return (
     <Box
-      bg={'purple.500'}
+      bg={'green.700'}
       px={4}
       py={3}
       borderBottomWidth={1}

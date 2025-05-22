@@ -31,6 +31,7 @@ import OrderConfirmation from '@screens/OrderConfirmation'
 import { StorageCartProps } from '@storage/storageCart'
 import { OrderHistory } from '@screens/OrderHistory'
 import {SearchProducts} from '@screens/SearchProducts'
+import { AllProducts } from '@screens/AllProducts'
 
 type AppRoutes = {
   home: { userId: string }
@@ -50,6 +51,7 @@ type AppRoutes = {
   productBySubCategory: { categoryId: string }
   productsBySubCategory: { categoryId: string }
   category: undefined
+  allProducts: undefined
 }
 
 export type AppNavigatorRoutesProps = BottomTabNavigationProp<AppRoutes>
@@ -190,6 +192,14 @@ export function AppRoutes() {
       <Screen
         name="productDetails"
         component={ProductDetails}
+        options={{
+          tabBarButton: () => null,
+        }} //não mostra ícone
+      />
+
+<Screen
+        name="allProducts"
+        component={AllProducts}
         options={{
           tabBarButton: () => null,
         }} //não mostra ícone
