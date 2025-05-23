@@ -169,7 +169,7 @@ export function OrderHistory() {
   }
 
   return (
-    <Box flex={1} bg="gray.50" >
+    <Box flex={1} bg="gray.50" safeArea >
         
       <HomeScreen title="Meus Pedidos" />
 
