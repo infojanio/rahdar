@@ -125,7 +125,7 @@ export function AllProductsCashback() {
 
   return (
     <VStack flex={1} bg="white" safeArea>
-      <HomeScreen title="Todos os Produtos" />
+      <HomeScreen title="Maiores cashbacks" />
 
       <Box px={4} py={2} bg="primary.100" mx={4} my={2} borderRadius="md">
         <HStack alignItems="center" space={1}>

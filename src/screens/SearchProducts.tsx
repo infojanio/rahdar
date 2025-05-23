@@ -138,7 +138,7 @@ export function SearchProducts() {
 
   return (
     <VStack flex={1} bg="white" safeArea>
-      <HomeScreen title="Buscar Produtos" />
+      <HomeScreen title="Pesquisar" />
 
       <Box px={4} pt={4}>
         <TextInput

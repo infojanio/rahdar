@@ -88,7 +88,7 @@ export function AllProductsQuantity() {
 
   return (
     <VStack flex={1} bg={'gray.100'} alignItems={'initial'} h={300}>
-            <HomeScreen title="Todos os Produtos" />
+            <HomeScreen title="Esgotando" />
 
 <Box px={4} py={2} bg="primary.100" mx={4} my={2} borderRadius="md">
   <HStack alignItems="center" space={1}>

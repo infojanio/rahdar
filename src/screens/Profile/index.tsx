@@ -65,7 +65,7 @@ export function Profile() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <HomeScreen title="Todos os Produtos" />
+      <HomeScreen title="Cashback Acumulado" />
      
      
 

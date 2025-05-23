@@ -58,7 +58,7 @@ export function Home() {
   )
 
   return (
-    <VStack flex={1} bg="gray.400">
+    <VStack flex={1} bg="gray.100">
       <Box>
         <HomeHeader />
       </Box>

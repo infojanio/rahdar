@@ -16,7 +16,7 @@ export function Saldo() {
       </Text>
 
       <HStack alignItems="center">
-        <Text fontSize="2xl" fontWeight="bold" color="white">
+        <Text fontSize="22" fontWeight="bold" color="white">
           {showBalance
             ? `R$ ${(Number(user.balance) || 0).toFixed(2)}`
             : '••••••'}
