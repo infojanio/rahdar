@@ -31,7 +31,9 @@ import OrderConfirmation from '@screens/OrderConfirmation'
 import { StorageCartProps } from '@storage/storageCart'
 import { OrderHistory } from '@screens/OrderHistory'
 import {SearchProducts} from '@screens/SearchProducts'
-import { AllProducts } from '@screens/AllProducts'
+import { AllProductsQuantity } from '@screens/AllProductsQuantity'
+import { AllProductsCashback } from '@screens/AllProductsCashback'
+
 
 type AppRoutes = {
   home: { userId: string }
@@ -51,7 +53,8 @@ type AppRoutes = {
   productBySubCategory: { categoryId: string }
   productsBySubCategory: { categoryId: string }
   category: undefined
-  allProducts: undefined
+  allProductsQuantity: undefined
+  allProductsCashback: undefined
 }
 
 export type AppNavigatorRoutesProps = BottomTabNavigationProp<AppRoutes>
@@ -197,9 +200,18 @@ export function AppRoutes() {
         }} //não mostra ícone
       />
 
+
 <Screen
-        name="allProducts"
-        component={AllProducts}
+        name="allProductsCashback"
+        component={AllProductsCashback}
+        options={{
+          tabBarButton: () => null,
+        }} //não mostra ícone
+      />
+
+<Screen
+        name="allProductsQuantity"
+        component={AllProductsQuantity}
         options={{
           tabBarButton: () => null,
         }} //não mostra ícone

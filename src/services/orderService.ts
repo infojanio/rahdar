@@ -1,4 +1,4 @@
-// src/services/cartService.ts
+// src/services/orderService.ts
 import { api } from '@services/api'
 
 export type OrderItemRequest = {
@@ -22,17 +22,31 @@ export type OrderResponse = {
   cashbackTotal: number
 }
 
-// Busca o carrinho completo do usuário
-// src/services/cartService.ts
+// ✅ Dados do saldo de cashback
+export type CashbackBalanceResponse = {
+  available: number
+  pending: number
+}
+
+// ✅ Dados do extrato
+export type CashbackTransaction = {
+  id: string
+  type: 'credit' | 'debit'
+  amount: number
+  description: string
+  createdAt: string
+}
+
+
+
+// 🔸 Buscar o pedido atual (carrinho ou último pedido aberto)
 async function getOrderFromBackend(): Promise<OrderResponse> {
   try {
-    const response = await api.get('/order') 
-    console.log('Resposta do backend:', response.data) // Log da resposta crua
+    const response = await api.get('/order')
 
     const rawItems = response.data.orderItems
 
     const items: OrderItemResponse[] = rawItems.map((item: any) => {
-      console.log('Item processado:', item) // Verificando cada item
       const product = item.product
       return {
         productId: item.productId,
@@ -41,21 +55,19 @@ async function getOrderFromBackend(): Promise<OrderResponse> {
         price: product?.price || 0,
         quantity: item.quantity,
         cashbackPercentage: product?.cashbackPercentage || 0,
-        storeId: product.storeId || '15c26392-6a84-425c-b0ad-951463e27e67', // Aqui, o storeId é atribuído
+        storeId: product?.storeId || '',
       }
     })
 
     const total = items.reduce(
       (acc, item) => acc + item.price * item.quantity,
-      0,
+      0
     )
     const cashbackTotal = items.reduce(
       (acc, item) =>
         acc + (item.price * item.quantity * item.cashbackPercentage) / 100,
-      0,
+      0
     )
-
-    console.log('Pedido processado:', { items, total, cashbackTotal })
 
     return { items, total, cashbackTotal }
   } catch (error) {
@@ -64,8 +76,47 @@ async function getOrderFromBackend(): Promise<OrderResponse> {
   }
 }
 
+// 🔸 Buscar saldo de cashback
+async function getCashbackBalance(): Promise<CashbackBalanceResponse> {
+  try {
+    const response = await api.get('/cashback/balance')
+    return response.data
+  } catch (error) {
+    console.error('Erro ao buscar saldo de cashback:', error)
+    throw error
+  }
+}
+
+// 🔸 Buscar extrato de cashback
+async function getCashbackTransactions(): Promise<CashbackTransaction[]> {
+  try {
+    const response = await api.get('/cashback/transactions')
+    return response.data.transactions
+  } catch (error) {
+    console.error('Erro ao buscar extrato de cashback:', error)
+    throw error
+  }
+}
+
+async function getPendingCashback() {
+  const response = await api.get('/orders/pending-cashback')
+  return response.data.pendingCashback // ajuste conforme a sua API
+}
+
+// 🔸 Usar cashback (debitar saldo disponível)
+async function useCashback(amount: number): Promise<void> {
+  try {
+    await api.post('/cashback/use', { amount })
+  } catch (error) {
+    console.error('Erro ao usar cashback:', error)
+    throw error
+  }
+}
 
 export const orderService = {
   getOrderFromBackend,
-  
+  getCashbackBalance,
+  getCashbackTransactions,
+  getPendingCashback,
+  useCashback,
 }

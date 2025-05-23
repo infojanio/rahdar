@@ -1,162 +1,224 @@
-import { useState } from 'react'
-import { TouchableOpacity } from 'react-native'
-import { useToast } from 'native-base'
-
-import { UserPhoto } from '@components/HomeHeader/UserPhoto'
-import { HomeScreen } from '@components/HomeScreen'
+import { useEffect, useState, useCallback } from 'react'
 import {
-  Center,
-  Heading,
-  ScrollView,
-  Skeleton,
+  View,
   Text,
-  VStack,
-} from 'native-base'
-
-import { Input } from '@components/Input'
-import { Button } from '@components/Button'
-
-import * as ImagePicker from 'expo-image-picker'
-import * as FileSystem from 'expo-file-system'
-
-import { useAuth } from '@hooks/useAuth'
-import { api } from '@services/api'
-
-const PHOTO_SIZE = 32
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native'
+import { userService } from '@services/userService'
+import { orderService } from '@services/orderService'
+import { useNavigation } from '@react-navigation/native'
+import { HomeScreen } from '@components/HomeScreen'
 
 export function Profile() {
-  const [photoIsLoading, setPhotoIsLoading] = useState(false)
-  const [userPhoto, setUserPhoto] = useState<string | undefined>(
-    'https://avatars.githubusercontent.com/u/59238443?s=400&u=791297bd91ddab3559bfe062a70e87c1919935bf&v=4',
-  )
+  const [balance, setBalance] = useState(0)
+  const [pendingCashback, setPendingCashback] = useState(0)
+  const [totalReceived, setTotalReceived] = useState(0)
+  const [totalUsed, setTotalUsed] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const toast = useToast()
-  const { user } = useAuth()
+  const navigation = useNavigation()
 
-  async function handleUserPhotoSelect() {
-    setPhotoIsLoading(true)
-
+  const fetchData = useCallback(async () => {
     try {
-      //acessa o album do fotos
-      const photoSelected = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 1,
-        aspect: [4, 4], //foto 4/4
-        allowsEditing: true, //edição da foto, recorte
-      })
+      setIsLoading(true)
 
-      if (photoSelected.canceled) {
-        return
-      }
+      const [balanceData, pending] = await Promise.all([
+        userService.getUserCashbackBalance(),
+        orderService.getPendingCashback(),
+      ])
 
-      //verifica se existe URI
-      if (photoSelected.assets[0].uri) {
-        const photoInfo = await FileSystem.getInfoAsync(
-          photoSelected.assets[0].uri,
-        )
-
-        //verifica se a foto é maior que 5 MB
-        if (photoInfo.size && photoInfo.size / 1024 / 1024 > 5) {
-          return toast.show({
-            title: 'Atenção, imagem maior que 5MB!',
-            placement: 'top',
-            bgColor: 'red.500',
-          })
-        }
-
-        // setUserPhoto(photoSelected.assets[0].uri)
-        const fileExtension = photoSelected.assets[0].uri?.split('.').pop() //retorna a extensão da imagem
-
-        const photoFile = {
-          name: `${user.name}.${fileExtension}`.toLowerCase(), //intepolar o nome ao arquivo com letras minúscula
-          uri: photoSelected.assets[0].uri,
-          type: `${photoSelected.assets[0].type}/${fileExtension}`,
-        } as any
-        // console.log(photoFile)
-
-        const userPhotoUploadForm = new FormData()
-        userPhotoUploadForm.append('avatar', photoFile) //avatar foi definido na rota do backend
-
-        await api.patch('/users/avatar', userPhotoUploadForm, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-
-        toast.show({
-          title: 'Foto Atualizada!',
-          placement: 'top',
-          bgColor: 'green.500',
-        })
-      }
-
-      //atualiza a foto
-      setUserPhoto(photoSelected.assets[0].uri)
-      toast.show({
-        title: 'Foto atualizada com sucesso!',
-        placement: 'top',
-        bgColor: 'green.500',
-      })
+      setBalance(balanceData.balance)
+      setTotalReceived(balanceData.totalReceived)
+      setTotalUsed(balanceData.totalUsed)
+      setPendingCashback(pending)
     } catch (error) {
-      console.log(error)
+      console.log('Erro ao carregar dados do perfil:', error)
+      Alert.alert('Erro', 'Não foi possível carregar seus dados.')
     } finally {
-      setPhotoIsLoading(false)
+      setIsLoading(false)
     }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const handleViewStatement = () => {
+    navigation.navigate('Statement' as never)
+  }
+
+  const handleUseCashback = () => {
+    navigation.navigate('UseCashback' as never)
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    )
   }
 
   return (
-    <VStack>
-      <HomeScreen title="Perfil" />
-      <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
-        <Center mt={2} px={10}>
-          {photoIsLoading ? (
-            <Skeleton
-              w={PHOTO_SIZE}
-              h={PHOTO_SIZE}
-              rounded="full"
-              startColor="gray.500"
-              endColor="gray.400"
-            />
-          ) : (
-            <TouchableOpacity onPress={handleUserPhotoSelect}>
-              <UserPhoto
-                source={{
-                  uri: userPhoto,
-                }}
-                alt="Foto do usuário"
-                size={PHOTO_SIZE}
-              />
-            </TouchableOpacity>
-          )}
+    <ScrollView contentContainerStyle={styles.container}>
+      <HomeScreen title="Todos os Produtos" />
+     
+     
 
-          <TouchableOpacity onPress={handleUserPhotoSelect}>
-            <Text
-              color="green.600"
-              fontWeight="bold"
-              fontSize="md"
-              mt={2}
-              mb={4}
-            >
-              Alterar foto
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Saldo de Cashback</Text>
+
+        <View style={styles.balanceRow}>
+          <View>
+            <Text style={styles.label}>Disponível</Text>
+            <Text style={styles.value}>R$ {balance.toFixed(2)}</Text>
+          </View>
+
+          <View>
+            <Text style={styles.label}>Pendente</Text>
+            <Text style={styles.valuePending}>
+              R$ {pendingCashback.toFixed(2)}
             </Text>
+          </View>
+        </View>
+
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleViewStatement}
+          >
+            <Text style={styles.buttonText}>Ver Extrato</Text>
           </TouchableOpacity>
 
-          <Input placeholder="Nome" />
-          <Input placeholder="info.janio@gmail.com" isDisabled={true} />
-        </Center>
+          <TouchableOpacity style={styles.button} onPress={handleUseCashback}>
+            <Text style={styles.buttonText}>Usar Cashback</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        <VStack px={10} mt={4} mb={9}>
-          <Heading color="gray.500" fontSize="md" mb={2}>
-            Alterar senha
-          </Heading>
+      <View style={styles.summary}>
+        <Text style={styles.summaryTitle}>Resumo</Text>
 
-          <Input placeholder="Senha atual" secureTextEntry />
-          <Input placeholder="Nova senha" secureTextEntry />
-          <Input placeholder="Confirme a nova senha" secureTextEntry />
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Recebido</Text>
+          <Text style={styles.summaryValue}>
+            R$ {totalReceived.toFixed(2)}
+          </Text>
+        </View>
 
-          <Button title="Atualizar" mt={2} />
-        </VStack>
-      </ScrollView>
-    </VStack>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Utilizado</Text>
+          <Text style={styles.summaryValue}>R$ {totalUsed.toFixed(2)}</Text>
+        </View>
+      </View>
+    </ScrollView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 2,
+    backgroundColor: '#F9FAFB',
+    flexGrow: 1,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#111827',
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+    marginBottom: 20,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: '#111827',
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  value: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#16A34A',
+  },
+  valuePending: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#F59E0B',
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    flex: 1,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  summary: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: '#111827',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+})

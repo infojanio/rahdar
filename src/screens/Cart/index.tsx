@@ -9,6 +9,7 @@ import {
   ScrollView,
   Spinner,
   useToast,
+  Box,
 } from 'native-base'
 import { AntDesign } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
@@ -175,14 +176,16 @@ export function Cart() {
 
     return (
       <HStack
-        key={item.productId}
-        bg="white"
-        borderRadius="lg"
-        p={3}
-        mb={3}
-        alignItems="center"
-        justifyContent="space-between"
+      key={item.productId}
+      bg="white"
+      borderRadius="lg"
+      p={3}
+      mb={3}
+      alignItems="center"
+      justifyContent="space-between"
+      
       >
+
         <HStack space={3} alignItems="center">
           <Image
             source={{ uri: item.image }}
@@ -247,8 +250,10 @@ export function Cart() {
   }
 
   return (
-    <VStack flex={1} bg="gray.100" p={2} mb={2}>
+    <VStack flex={1}>
       <HomeScreen title="Carrinho" />
+     
+    <VStack flex={1} bg="gray.100" p={2} mb={2}>
 
       {isLoading ? (
         <Spinner mt={10} />
@@ -281,6 +286,7 @@ export function Cart() {
           </Button>
         </>
       )}
+    </VStack>
     </VStack>
   )
 }

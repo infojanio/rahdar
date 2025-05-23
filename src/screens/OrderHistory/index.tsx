@@ -17,6 +17,7 @@ import {
 import { api } from '@services/api'
 import { formatCurrency } from '@utils/format'
 import { useFocusEffect } from '@react-navigation/native'
+import { HomeScreen } from '@components/HomeScreen'
 
 interface Product {
   id: string
@@ -168,10 +169,9 @@ export function OrderHistory() {
   }
 
   return (
-    <Box flex={1} bg="gray.50" p={4}>
-      <Text fontSize="xl" fontWeight="bold" mb={4}>
-        Meus Pedidos
-      </Text>
+    <Box flex={1} bg="gray.50" >
+        
+      <HomeScreen title="Meus Pedidos" />
 
       {/* Filtro por Status com Pressable */}
       <ScrollView

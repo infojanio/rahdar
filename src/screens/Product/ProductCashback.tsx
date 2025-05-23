@@ -24,7 +24,7 @@ export function ProductCashback() {
   function handleViewAllCashbacks() {
 
     // Aqui você pode redirecionar para uma tela de "todos os produtos com cashback", se quiser
-    navigation.navigate('allProducts')
+    navigation.navigate('allProductsCashback')
   }
 
   async function fetchProductsByCashback() {
