@@ -73,9 +73,7 @@ export function AllProductsCashback() {
         setPage(pageNumber)
       } catch (error) {
         const isAppError = error instanceof AppError
-        const title = isAppError
-          ? error.message
-          : 'Erro ao carregar produtos.'
+        const title = isAppError ? error.message : 'Erro ao carregar produtos.'
 
         toast.show({
           title,
@@ -87,26 +85,35 @@ export function AllProductsCashback() {
         setIsLoadingMore(false)
       }
     },
-    [toast] // Removi as dependências que causavam o loop
+    [toast], // Removi as dependências que causavam o loop
   )
 
-  const applyCashbackFilter = useCallback((productsList: ProductDTO[], filter: string) => {
-    let filtered = [...productsList]
-    switch (filter) {
-      case '5':
-        filtered = productsList.filter((product) => product.cashbackPercentage > 5)
-        break
-      case '10':
-        filtered = productsList.filter((product) => product.cashbackPercentage > 10)
-        break
-      case '15':
-        filtered = productsList.filter((product) => product.cashbackPercentage > 15)
-        break
-      default:
-        filtered = productsList
-    }
-    setFilteredProducts(filtered)
-  }, [])
+  const applyCashbackFilter = useCallback(
+    (productsList: ProductDTO[], filter: string) => {
+      let filtered = [...productsList]
+      switch (filter) {
+        case '5':
+          filtered = productsList.filter(
+            (product) => product.cashbackPercentage > 5,
+          )
+          break
+        case '10':
+          filtered = productsList.filter(
+            (product) => product.cashbackPercentage > 10,
+          )
+          break
+        case '15':
+          filtered = productsList.filter(
+            (product) => product.cashbackPercentage > 15,
+          )
+          break
+        default:
+          filtered = productsList
+      }
+      setFilteredProducts(filtered)
+    },
+    [],
+  )
 
   const handleCashbackFilterChange = (value: string) => {
     setCashbackFilter(value)
@@ -132,41 +139,32 @@ export function AllProductsCashback() {
           <MaterialIcons name="local-offer" size={18} color="#00875F" />
           <Text color="#00875F" fontWeight="bold">
             Todos os produtos oferecem cashback!
-          </Text>          
-        </HStack>        
+          </Text>
+        </HStack>
       </Box>
 
+      <VStack justifyContent={'space-between'} ml={1} mb={1}>
+        <HStack justifyContent={'space-between'} mr={2}>
+          <Text
+            fontSize={'md'}
+            color={'black.200'}
+            fontWeight={'semibold'}
+            ml={'2'}
+          >
+            Filtrar por cashback
+          </Text>
 
-
-
-        <VStack justifyContent={'space-between'} ml={1} mb={1}>
-          <HStack justifyContent={'space-between'} mr={2}>
-            <Text
-              fontSize={'md'}
-              color={'black.200'}
-              fontWeight={'semibold'}
-              ml={'2'}
-            >
-              Filtrar por cashback
-            </Text>
-          
-              <Box
-                mr={6}
-                borderBottomWidth={'3.5'}
-                borderColor={'yellow.300'}
-                borderRadius={'md'}
-              >
-      
-              </Box>
-          
-          </HStack>
-          <Box ml={2} width={20} height={1} bg={'yellow.300'}>
-            {''}
-          </Box>
-        </VStack>
-
-
-
+          <Box
+            mr={6}
+            borderBottomWidth={'3.5'}
+            borderColor={'yellow.300'}
+            borderRadius={'md'}
+          ></Box>
+        </HStack>
+        <Box ml={2} width={20} height={1} bg={'yellow.300'}>
+          {''}
+        </Box>
+      </VStack>
 
       <Box px={4} mb={2}>
         <Select
@@ -175,8 +173,8 @@ export function AllProductsCashback() {
           accessibilityLabel="Filtrar por cashback"
           placeholder="Filtrar por cashback"
           _selectedItem={{
-            bg: "primary.100",
-            endIcon: <CheckIcon size="5" />
+            bg: 'primary.100',
+            endIcon: <CheckIcon size="5" />,
           }}
           mt={1}
           onValueChange={handleCashbackFilterChange}
@@ -210,9 +208,7 @@ export function AllProductsCashback() {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.1}
           ListFooterComponent={
-            isLoadingMore ? (
-              <Spinner color="primary.500" mb={4} />
-            ) : null
+            isLoadingMore ? <Spinner color="primary.500" mb={4} /> : null
           }
           ListEmptyComponent={
             <Text textAlign="center" mt={10} color="gray.500">

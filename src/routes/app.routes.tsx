@@ -27,13 +27,12 @@ import { ProductBySubCategory } from '@screens/Product/ProductBySubCategory'
 
 import { Category } from '@components/Category'
 import { ProductsBySubCategory } from '@screens/Product/ProductsBySubCategory'
-import OrderConfirmation from '@screens/OrderConfirmation'
+import { OrderConfirmation } from '@screens/OrderConfirmation'
 import { StorageCartProps } from '@storage/storageCart'
 import { OrderHistory } from '@screens/OrderHistory'
-import {SearchProducts} from '@screens/SearchProducts'
+import { SearchProducts } from '@screens/SearchProducts'
 import { AllProductsQuantity } from '@screens/AllProductsQuantity'
 import { AllProductsCashback } from '@screens/AllProductsCashback'
-
 
 type AppRoutes = {
   home: { userId: string }
@@ -45,7 +44,7 @@ type AppRoutes = {
   productList: undefined
   signUp: undefined
 
-  searchProducts: {productId: string}
+  searchProducts: { productId: string }
   checkout: { cart: StorageCartProps[] }
   orderConfirmation: { orderId: string } // Modificado para receber apenas o ID
   orderHistory: undefined //
@@ -200,8 +199,7 @@ export function AppRoutes() {
         }} //não mostra ícone
       />
 
-
-<Screen
+      <Screen
         name="allProductsCashback"
         component={AllProductsCashback}
         options={{
@@ -209,7 +207,7 @@ export function AppRoutes() {
         }} //não mostra ícone
       />
 
-<Screen
+      <Screen
         name="allProductsQuantity"
         component={AllProductsQuantity}
         options={{

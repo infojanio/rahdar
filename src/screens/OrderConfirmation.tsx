@@ -43,7 +43,7 @@ interface OrderData {
   items: OrderItem[]
 }
 
-export default function OrderConfirmation() {
+export function OrderConfirmation() {
   const route = useRoute<RouteProp<RootStackParamList, 'OrderConfirmation'>>()
   const navigation = useNavigation<AppNavigatorRoutesProps>()
   const { orderId } = route.params

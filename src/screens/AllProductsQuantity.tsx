@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import { 
-  VStack, 
-  Text, 
-  FlatList, 
-  useToast, 
-  Box, 
+import {
+  VStack,
+  Text,
+  FlatList,
+  useToast,
+  Box,
   HStack,
   Select,
   CheckIcon,
-  Spinner
+  Spinner,
 } from 'native-base'
 import { useNavigation } from '@react-navigation/native'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
@@ -88,18 +88,17 @@ export function AllProductsQuantity() {
 
   return (
     <VStack flex={1} bg={'gray.100'} alignItems={'initial'} h={300}>
-            <HomeScreen title="Esgotando" />
+      <HomeScreen title="Esgotando" />
 
-<Box px={4} py={2} bg="primary.100" mx={4} my={2} borderRadius="md">
-  <HStack alignItems="center" space={1}>
-    <MaterialIcons name="local-offer" size={18} color="#00875F" />
-    <Text color="#00875F" fontWeight="bold">
-      Todos os produtos oferecem cashback!
-    </Text>
-  </HStack>  
-     </Box>
+      <Box px={4} py={2} bg="primary.100" mx={4} my={2} borderRadius="md">
+        <HStack alignItems="center" space={1}>
+          <MaterialIcons name="local-offer" size={18} color="#00875F" />
+          <Text color="#00875F" fontWeight="bold">
+            Todos os produtos oferecem cashback!
+          </Text>
+        </HStack>
+      </Box>
 
-     
       <VStack>
         <VStack justifyContent={'space-between'} ml={1} mb={1}>
           <HStack justifyContent={'space-between'} mr={2}>
@@ -117,9 +116,7 @@ export function AllProductsQuantity() {
                 borderBottomWidth={'3.5'}
                 borderColor={'yellow.300'}
                 borderRadius={'md'}
-              >
-      
-              </Box>
+              ></Box>
             </TouchableOpacity>
           </HStack>
           <Box ml={2} width={20} height={1} bg={'yellow.300'}>
@@ -127,7 +124,6 @@ export function AllProductsQuantity() {
           </Box>
         </VStack>
 
-        
         {/* Filtro por quantidade */}
         <Box px={4} mb={2}>
           <Select
@@ -136,8 +132,8 @@ export function AllProductsQuantity() {
             accessibilityLabel="Filtrar por quantidade"
             placeholder="Filtrar por quantidade"
             _selectedItem={{
-              bg: "yellow.100",
-              endIcon: <CheckIcon size="5" />
+              bg: 'yellow.100',
+              endIcon: <CheckIcon size="5" />,
             }}
             mt={1}
             onValueChange={handleQuantityFilterChange}

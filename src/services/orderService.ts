@@ -37,8 +37,6 @@ export type CashbackTransaction = {
   createdAt: string
 }
 
-
-
 // 🔸 Buscar o pedido atual (carrinho ou último pedido aberto)
 async function getOrderFromBackend(): Promise<OrderResponse> {
   try {
@@ -61,12 +59,12 @@ async function getOrderFromBackend(): Promise<OrderResponse> {
 
     const total = items.reduce(
       (acc, item) => acc + item.price * item.quantity,
-      0
+      0,
     )
     const cashbackTotal = items.reduce(
       (acc, item) =>
         acc + (item.price * item.quantity * item.cashbackPercentage) / 100,
-      0
+      0,
     )
 
     return { items, total, cashbackTotal }
