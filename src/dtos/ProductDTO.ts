@@ -9,26 +9,34 @@ export type ProductDTO = {
   image: string
   cashbackPercentage: number
   store_id: string
-  subcategory_id: string // Alterado para compatibilidade com seu backend
+  subcategory_id: string
   status: boolean
 
-  // Campos opcionais para frontend
-  categoryId?: string // Adicionado para filtragem
+  // Campos opcionais úteis para o frontend
+  subcategory?: {
+    id: string
+    name: string
+  } // <- Quando o backend inclui dados da subcategoria (ideal)
+
+  // Alternativo, usado para frontend se não trouxer relação completa
   subcategoryName?: string
+
+  // Futuro: se quiser trabalhar com categorias diretamente
+  categoryId?: string
 }
 
-// Tipo para uso em telas onde subcategoryName é necessário (ex: Search)
+// 🔹 Tipo para uso em telas onde subcategoryName é necessário (ex.: Search, agrupamento)
 export type ProductWithSubcategory = ProductDTO & {
   subcategoryName: string // <- obrigatório nesse contexto
 }
 
-// Tipo para resposta da API de produtos
+// 🔹 Tipo para resposta da API de produtos
 export interface ProductsResponseDTO {
   data: ProductDTO[]
-  // Adicione outros campos de paginação se necessário
+  // Inclua paginação se necessário: page, total, perPage, etc.
 }
 
-// Tipo para filtros de produtos
+// 🔹 Tipo para filtros de produtos na busca
 export interface ProductFiltersDTO {
   categoryId?: string
   subcategoryId?: string

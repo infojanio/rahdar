@@ -16,7 +16,6 @@ export function HomeScreen({ title }: Props) {
     <Box bg="white" shadow={2} mb={2} ml={1}>
       <HStack
         px={2}
-        py={3}
         alignItems="center"
         justifyContent="space-between"
         bg="white"
@@ -33,7 +32,7 @@ export function HomeScreen({ title }: Props) {
         />
 
         <VStack flex={1} alignItems="center" ml={-8}>
-          <Text fontSize="lg" fontWeight="bold" color="gray.800">
+          <Text fontSize="16" fontWeight="normal" color="gray.500">
             {title || 'Categoria'}
           </Text>
         </VStack>

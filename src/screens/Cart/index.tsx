@@ -9,6 +9,7 @@ import {
   ScrollView,
   Spinner,
   useToast,
+  Box,
 } from 'native-base'
 import { AntDesign } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
@@ -245,40 +246,42 @@ export function Cart() {
   }
 
   return (
-    <VStack flex={1} bg="gray.100" p={2} mb={2}>
+    <VStack flex={1} safeArea>
       <HomeScreen title="Carrinho" />
 
-      {isLoading ? (
-        <Spinner mt={10} />
-      ) : cartItems.length === 0 ? (
-        <Text textAlign="center" mt={10} color="red.500" fontSize={16}>
-          Seu carrinho está vazio.
-        </Text>
-      ) : (
-        <>
-          <ScrollView flex={1}>
-            {orderedCartItems.map(renderCartItem)}
-          </ScrollView>
+      <VStack flex={1} bg="gray.100" p={2} mb={2}>
+        {isLoading ? (
+          <Spinner mt={10} />
+        ) : cartItems.length === 0 ? (
+          <Text textAlign="center" mt={10} color="red.500" fontSize={16}>
+            Seu carrinho está vazio.
+          </Text>
+        ) : (
+          <>
+            <ScrollView flex={1}>
+              {orderedCartItems.map(renderCartItem)}
+            </ScrollView>
 
-          <Divider my={4} />
-          <HStack justifyContent="space-between" alignItems="center" mb={4}>
-            <Text fontSize="lg" fontWeight="bold">
-              Subtotal:
-            </Text>
-            <Text fontSize="lg" fontWeight="bold" color="green.600">
-              {formatCurrency(subtotal)}
-            </Text>
-          </HStack>
-          <Button
-            colorScheme="green"
-            onPress={handleCheckout}
-            isLoading={Object.values(isUpdating).some(Boolean)}
-            isDisabled={cartItems.length === 0}
-          >
-            Finalizar compra
-          </Button>
-        </>
-      )}
+            <Divider my={4} />
+            <HStack justifyContent="space-between" alignItems="center" mb={4}>
+              <Text fontSize="lg" fontWeight="bold">
+                Subtotal:
+              </Text>
+              <Text fontSize="lg" fontWeight="bold" color="green.600">
+                {formatCurrency(subtotal)}
+              </Text>
+            </HStack>
+            <Button
+              colorScheme="green"
+              onPress={handleCheckout}
+              isLoading={Object.values(isUpdating).some(Boolean)}
+              isDisabled={cartItems.length === 0}
+            >
+              Finalizar compra
+            </Button>
+          </>
+        )}
+      </VStack>
     </VStack>
   )
 }

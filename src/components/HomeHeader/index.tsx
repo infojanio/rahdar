@@ -21,9 +21,11 @@ export function HomeHeader() {
 
   return (
     <Box
-      bg={'purple.500'}
+      bg={'green.600'}
       px={4}
-      py={3}
+      ml={1.5}
+      mr={0.5}
+      borderTopRadius={'3xl'}
       borderBottomWidth={1}
       borderBottomColor="primary.900"
       shadow={3}
@@ -35,9 +37,9 @@ export function HomeHeader() {
             Olá,
           </Text>
           <Text
-            fontSize="lg"
+            fontSize="14"
             color="white"
-            fontWeight="bold"
+            fontWeight="normal"
             numberOfLines={1}
             maxW="180"
             textTransform="capitalize"

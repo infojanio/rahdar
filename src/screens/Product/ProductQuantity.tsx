@@ -21,6 +21,11 @@ export function ProductQuantity() {
     navigation.navigate('productDetails', { productId })
   }
 
+  function handleViewAllByQuantity() {
+    // Aqui você pode redirecionar para uma tela de "todos os produtos com cashback", se quiser
+    navigation.navigate('allProductsQuantity')
+  }
+
   //listar as subcategories no select
   async function fetchProductByQuantity() {
     try {
@@ -61,7 +66,7 @@ export function ProductQuantity() {
             >
               Tá acabando
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleViewAllByQuantity}>
               <Box
                 mr={6}
                 borderBottomWidth={'3.5'}

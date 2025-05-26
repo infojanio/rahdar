@@ -8,7 +8,7 @@ export type CategoryDTO = {
   status: boolean
 
   // Adicionando subcategorias para funcionar com seu filtro
-  subcategories?: SubCategoryDTO[]
+  subcategories: SubCategoryDTO[]
 }
 
 export type SubCategoryDTO = {

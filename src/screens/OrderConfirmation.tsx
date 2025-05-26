@@ -62,7 +62,7 @@ export function OrderConfirmation() {
 
       try {
         const res = await api.get(`/orders/${orderId}`)
-        console.log('Resposta da API:', res.data.orders?.[0])
+        console.log('Resposta da API:', res.data)
 
         // Ajuste para a estrutura de resposta esperada
         const orderData = res.data.orders?.[0] // Acessa o primeiro pedido do array
@@ -209,10 +209,14 @@ export function OrderConfirmation() {
                     <Text color="gray.500">
                       {item.quantity}x {formatCurrency(item.product.price)}
                     </Text>
-                    <Text color="green.600" fontSize={'16'} fontWeight={'bold'}>
+                    <Text color="green.600">
                       {item.product.cashbackPercentage}% cashback
                     </Text>
                   </HStack>
+                  <Text fontWeight="bold" textAlign="right">
+                    Subtotal:{' '}
+                    {formatCurrency(item.product.price * item.quantity)}
+                  </Text>
                 </VStack>
               </HStack>
             ))}
@@ -232,7 +236,7 @@ export function OrderConfirmation() {
           </HStack>
           <HStack justifyContent="space-between">
             <Text fontWeight="bold">Cashback Total:</Text>
-            <Text color="green.600" fontSize={'16'}>
+            <Text color="green.600">
               {formatCurrency(calculateTotalCashback())}
             </Text>
           </HStack>

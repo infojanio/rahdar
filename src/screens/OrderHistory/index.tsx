@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   Box,
   Text,
@@ -10,12 +10,14 @@ import {
   useToast,
   Badge,
   Divider,
+  Pressable,
   ScrollView,
-  CheckIcon,
-  Select,
+  Center,
 } from 'native-base'
 import { api } from '@services/api'
 import { formatCurrency } from '@utils/format'
+import { useFocusEffect } from '@react-navigation/native'
+import { HomeScreen } from '@components/HomeScreen'
 
 interface Product {
   id: string
@@ -36,78 +38,103 @@ interface Order {
   createdAt: string
   totalAmount: number
   status: string
-  //status: 'PENDING' | 'VALIDATED' | 'EXPIRED'
   items: OrderItem[]
   cashbackAmount?: number
   qrCodeUrl?: string | null
 }
 
 const DEFAULT_PRODUCT_IMAGE = 'https://via.placeholder.com/80'
+const STATUS_OPTIONS = [
+  { value: '', label: 'Todos' },
+  { value: 'PENDING', label: 'Pendente' },
+  { value: 'VALIDATED', label: 'Aprovado' },
+  { value: 'EXPIRED', label: 'Recusado' },
+]
 
 export function OrderHistory() {
   const [orders, setOrders] = useState<Order[]>([])
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [status, setStatus] = useState<string>('')
+  const [selectedStatus, setSelectedStatus] = useState<string>('')
+  const [refreshing, setRefreshing] = useState(false)
   const toast = useToast()
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true)
-        const response = await api.get(`/orders/history/`, {
-          params: { status: status || undefined },
-        })
-        const validatedOrders = (response.data.orders || []).map(
-          (order: any) => ({
-            id: order.id || '',
-            createdAt: order.createdAt || new Date().toISOString(),
-            totalAmount: order.totalAmount || 0,
-            status: ['PENDING', 'VALIDATED', 'EXPIRED'].includes(order.status)
-              ? order.status
-              : 'PENDING',
-            items: (order.items || []).map((item: any) => ({
-              id: item.id || Math.random().toString(36).substr(2, 9), // Fallback único
-              quantity: item.quantity || 0,
-              product: {
-                id:
-                  item.product?.id ||
-                  item.productId?.id ||
-                  Math.random().toString(36).substr(2, 9),
-                name:
-                  item.product?.name ||
-                  item.productId?.name ||
-                  'Produto desconhecido',
-                price: item.product?.price || item.productId?.price || 0,
-                image:
-                  item.product?.image ||
-                  item.productId?.image ||
-                  DEFAULT_PRODUCT_IMAGE,
-                cashbackPercentage:
-                  item.product?.cashbackPercentage ||
-                  item.productId?.cashbackPercentage ||
-                  0,
-              },
-            })),
-            cashbackAmount: order.cashbackAmount || undefined,
-            qrCodeUrl: order.qrCodeUrl || null,
-          }),
-        )
+  // Função para carregar os pedidos
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await api.get('/orders/history')
 
-        setOrders(validatedOrders)
-      } catch (error) {
-        console.error('Erro ao buscar pedidos:', error)
-        toast.show({
-          description: 'Erro ao carregar histórico de pedidos',
-          bgColor: 'red.500',
-          placement: 'top',
-        })
-      } finally {
-        setLoading(false)
-      }
+      const validatedOrders = (response.data.orders || []).map(
+        (order: any) => ({
+          id: order.id || '',
+          createdAt: order.createdAt || new Date().toISOString(),
+          totalAmount: order.totalAmount || 0,
+          status: order.status || 'PENDING',
+          items: (order.items || []).map((item: any) => ({
+            id: item.id || Math.random().toString(36).substr(2, 9),
+            quantity: item.quantity || 0,
+            product: {
+              id: item.product?.id || item.productId?.id || '',
+              name:
+                item.product?.name ||
+                item.productId?.name ||
+                'Produto desconhecido',
+              price: item.product?.price || item.productId?.price || 0,
+              image:
+                item.product?.image ||
+                item.productId?.image ||
+                DEFAULT_PRODUCT_IMAGE,
+              cashbackPercentage:
+                item.product?.cashbackPercentage ||
+                item.productId?.cashbackPercentage ||
+                0,
+            },
+          })),
+          cashbackAmount: order.cashbackAmount,
+          qrCodeUrl: order.qrCodeUrl || null,
+        }),
+      )
+
+      setOrders(validatedOrders)
+      return validatedOrders
+    } catch (error) {
+      console.error('Erro ao buscar pedidos:', error)
+      toast.show({
+        description: 'Erro ao carregar histórico de pedidos',
+        bgColor: 'red.500',
+        placement: 'top',
+      })
+      return []
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
     }
+  }, [toast])
 
-    fetchOrders()
-  }, [status])
+  // Atualiza os pedidos quando a tela recebe foco
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders()
+    }, [fetchOrders]),
+  )
+
+  // Filtra os pedidos quando o status selecionado muda
+  useEffect(() => {
+    if (selectedStatus === '') {
+      setFilteredOrders(orders)
+    } else {
+      setFilteredOrders(
+        orders.filter((order) => order.status === selectedStatus),
+      )
+    }
+  }, [selectedStatus, orders])
+
+  // Função para atualização manual (pull-to-refresh)
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await fetchOrders()
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -119,19 +146,6 @@ export function OrderHistory() {
         return 'error'
       default:
         return 'coolGray'
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return 'Pendente'
-      case 'VALIDATED':
-        return 'Aprovado'
-      case 'EXPIRED':
-        return 'Recusado'
-      default:
-        return status
     }
   }
 
@@ -155,121 +169,149 @@ export function OrderHistory() {
   }
 
   return (
-    <Box>
-      <Box ml={4} mr={4} mt={2} mb={2}>
-        <Text fontSize="xl" fontWeight="bold" mb={4}>
-          Meus Pedidos
-        </Text>
-        <Select
-          selectedValue={status}
-          minWidth="200"
-          accessibilityLabel="Filtrar por status"
-          placeholder="Filtrar por status"
-          _selectedItem={{ bg: 'teal.600', endIcon: <CheckIcon size={5} /> }}
-          onValueChange={(value) => setStatus(value)}
-        >
-          <Select.Item label="Todos" value="" />
-          <Select.Item label="Pendente" value="PENDING" />
-          <Select.Item label="Validado" value="VALIDATED" />
-          <Select.Item label="Expirado" value="EXPIRED" />
-        </Select>
-      </Box>
-      <ScrollView bg="gray.50" p={4}>
-        {orders.length === 0 ? (
-          <Box bg="white" p={4} borderRadius="md" alignItems="center">
-            <Text color="gray.500">Nenhum pedido encontrado</Text>
-          </Box>
-        ) : (
-          <VStack space={4}>
-            {orders.map((order) => (
+    <Box flex={1} bg="gray.50" safeArea>
+      <HomeScreen title="Meus Pedidos" />
+
+      {/* Filtro por Status com Pressable */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        mb={4}
+        py={2}
+      >
+        <HStack space={1} mb={2}>
+          {STATUS_OPTIONS.map((option) => (
+            <Pressable
+              key={`status-${option.value}`}
+              onPress={() => setSelectedStatus(option.value)}
+            >
               <Box
-                key={`order-${order.id}`}
-                bg="white"
-                p={4}
-                borderRadius="md"
-                shadow={1}
+                mr={3}
+                w={24}
+                h={10}
+                borderRadius="2xl"
+                bg={
+                  selectedStatus === option.value ? 'primary.500' : 'gray.200'
+                }
               >
-                {/* Cabeçalho do Pedido */}
-                <HStack justifyContent="space-between" mb={2}>
-                  <Text fontWeight="bold">
-                    Pedido #{order.id.substring(0, 8)}
+                <Center>
+                  <Text
+                    color={
+                      selectedStatus === option.value ? 'white' : 'gray.700'
+                    }
+                    fontWeight="medium"
+                    alignItems={'center'}
+                    justifyContent={'center'}
+                    ml={2}
+                    mt={2}
+                  >
+                    {option.label}
                   </Text>
-                  <Badge colorScheme={getStatusColor(order.status)}>
-                    {getStatusText(order.status)}
-                  </Badge>
-                </HStack>
+                </Center>
+              </Box>
+            </Pressable>
+          ))}
+        </HStack>
+      </ScrollView>
 
-                <Text color="gray.500" mb={3}>
-                  {new Date(order.createdAt).toLocaleDateString('pt-BR')}
-                </Text>
+      {filteredOrders.length === 0 ? (
+        <Box
+          bg="white"
+          pb={280}
+          borderRadius="md"
+          alignItems={'center'}
+          fontSize={'16'}
+        >
+          <Text color="red.500">
+            {selectedStatus === ''
+              ? 'Nenhum pedido encontrado'
+              : `Nenhum pedido com status ${STATUS_OPTIONS.find(
+                  (o) => o.value === selectedStatus,
+                )?.label.toLowerCase()}`}
+          </Text>
+        </Box>
+      ) : (
+        <FlatList
+          data={filteredOrders}
+          keyExtractor={(item) => `order-${item.id}`}
+          renderItem={({ item }) => (
+            <Box mb={4} bg="white" p={4} borderRadius="md" shadow={1}>
+              <HStack justifyContent="space-between" mb={2}>
+                <Text fontWeight="bold">Pedido #{item.id.substring(0, 8)}</Text>
+                <Badge colorScheme={getStatusColor(item.status)}>
+                  {STATUS_OPTIONS.find((o) => o.value === item.status)?.label ||
+                    item.status}
+                </Badge>
+              </HStack>
 
-                {/* Lista de Itens */}
-                <VStack space={3} mb={3}>
-                  {order.items.map((item) => {
-                    const product = item.product || {}
-                    const uniqueKey = `item-${order.id}-${item.id}-${product.id}`
-                    return (
-                      <HStack key={uniqueKey} space={3} alignItems="center">
-                        <Image
-                          source={{
-                            uri: product.image || DEFAULT_PRODUCT_IMAGE,
-                          }}
-                          alt={product.name}
+              <Text color="gray.500" mb={3}>
+                {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+              </Text>
+
+              <VStack space={3} mb={3}>
+                {item.items.map((orderItem) => (
+                  <HStack
+                    key={`item-${item.id}-${orderItem.id}`}
+                    space={3}
+                    alignItems="center"
+                  >
+                    <Image
+                      source={{
+                        uri: orderItem.product.image || DEFAULT_PRODUCT_IMAGE,
+                      }}
+                      alt={orderItem.product.name}
+                      size="sm"
+                      borderRadius="md"
+                      fallbackElement={
+                        <Box
+                          bg="gray.200"
                           size="sm"
                           borderRadius="md"
-                          fallbackElement={
-                            <Box
-                              bg="gray.200"
-                              size="sm"
-                              borderRadius="md"
-                              justifyContent="center"
-                              alignItems="center"
-                            >
-                              <Text color="gray.500">Sem imagem</Text>
-                            </Box>
-                          }
-                        />
-                        <VStack flex={1}>
-                          <Text fontWeight="medium">{product.name}</Text>
-                          <HStack justifyContent="space-between">
-                            <Text color="gray.500">
-                              {item.quantity}x {formatCurrency(product.price)}
-                            </Text>
-                            <Text color="green.600">
-                              {product.cashbackPercentage}% cashback
-                            </Text>
-                          </HStack>
-                        </VStack>
+                          justifyContent="center"
+                          alignItems="center"
+                        >
+                          <Text color="gray.500">Sem imagem</Text>
+                        </Box>
+                      }
+                    />
+                    <VStack flex={1}>
+                      <Text fontWeight="medium">{orderItem.product.name}</Text>
+                      <HStack justifyContent="space-between">
+                        <Text color="gray.500">
+                          {orderItem.quantity}x{' '}
+                          {formatCurrency(orderItem.product.price)}
+                        </Text>
+                        <Text color="green.600">
+                          {orderItem.product.cashbackPercentage}% cashback
+                        </Text>
                       </HStack>
-                    )
-                  })}
-                </VStack>
-
-                <Divider my={2} />
-
-                {/* Resumo Financeiro */}
-                <VStack space={2}>
-                  <HStack justifyContent="space-between">
-                    <Text fontWeight="bold">Subtotal:</Text>
-                    <Text fontSize={'16'}>
-                      {formatCurrency(order.totalAmount)}
-                    </Text>
+                    </VStack>
                   </HStack>
+                ))}
+              </VStack>
 
-                  <HStack justifyContent="space-between">
-                    <Text fontWeight="bold" fontSize={'16'}>
-                      Cashback:
-                    </Text>
-                    <Text color="green.600" fontWeight={'bold'} fontSize={'16'}>
-                      {formatCurrency(calculateOrderCashback(order))}
-                    </Text>
-                  </HStack>
-                </VStack>
-              </Box>
-            ))}
-          </VStack>
-        )}
-      </ScrollView>
+              <Divider my={2} />
+
+              <VStack space={2}>
+                <HStack justifyContent="space-between">
+                  <Text fontWeight="bold">Subtotal:</Text>
+                  <Text>{formatCurrency(item.totalAmount)}</Text>
+                </HStack>
+
+                <HStack justifyContent="space-between">
+                  <Text fontWeight="bold">Cashback:</Text>
+                  <Text color="green.600">
+                    {formatCurrency(calculateOrderCashback(item))}
+                  </Text>
+                </HStack>
+              </VStack>
+            </Box>
+          )}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
+      )}
     </Box>
   )
 }
