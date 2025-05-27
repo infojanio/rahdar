@@ -18,6 +18,7 @@ import { Loading } from '@components/Loading'
 import { ProductCashback } from './Product/ProductCashback'
 import { ProductQuantity } from './Product/ProductQuantity'
 import { InstagramReelsCarousel } from './InstagramReelsCarousel'
+import { CashbackRegulation } from './CashbackRegulation'
 
 export function Home() {
   const navigation = useNavigation<AppNavigatorRoutesProps>()
@@ -76,6 +77,7 @@ export function Home() {
             <ProductCashback />
             <ProductQuantity />
             <InstagramReelsCarousel/>
+            <CashbackRegulation/>
           </VStack>
         </ScrollView>
       )}

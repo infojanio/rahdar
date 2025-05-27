@@ -19,9 +19,9 @@ import { useAuth } from '@hooks/useAuth'
 export type AuthContextDataProps = {
   user: UserDTO
   userId: string
+  isAdmin: boolean // <- Aqui
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
-
   isLoadingUserStorageData: boolean
 }
 
@@ -64,6 +64,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
       await storageUserSave(userData)
       await storageAuthTokenSave({ token, refreshToken })
     } catch (error) {
+      console.log('[AuthContext] Erro ao salvar usuário e token:', error)
       console.error('[AuthContext] Erro ao salvar usuário e token:', error)
       throw error
     }
@@ -85,10 +86,12 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
         )
         await userAndTokenUpdate(data.user, data.accessToken)
       } else {
-        console.error('[AuthContext] Dados inválidos retornados da API!')
+        console.log('[AuthContext] Dados inválidos retornados da API!')
+        //console.error('[AuthContext] Dados inválidos retornados da API!')
       }
     } catch (error) {
-      console.error('[AuthContext] Erro ao fazer login:', error)
+      console.log('[AuthContext] Erro ao fazer login:', error)
+      // console.error('[AuthContext] Erro ao fazer login:', error)
       throw error
     } finally {
       setIsLoadingUserStorageData(false)
@@ -108,7 +111,8 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
 
       console.log('[AuthContext] Logout realizado com sucesso!')
     } catch (error) {
-      console.error('[AuthContext] Erro ao fazer logout:', error)
+      console.log('[AuthContext] Erro ao fazer logout:', error)
+      // console.error('[AuthContext] Erro ao fazer logout:', error)
       throw error
     } finally {
       setIsLoadingUserStorageData(false)
@@ -136,7 +140,8 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
         setUser({} as UserDTO)
       }
     } catch (error) {
-      console.error('[AuthContext] Erro ao carregar usuário:', error)
+      console.log('[AuthContext] Erro ao carregar usuário:', error)
+      //console.error('[AuthContext] Erro ao carregar usuário:', error)
     } finally {
       setIsLoadingUserStorageData(false)
     }
@@ -152,6 +157,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
       value={{
         user,
         userId,
+        isAdmin: user?.role === 'ADMIN', // <- Aqui
         signIn,
         signOut,
         isLoadingUserStorageData,

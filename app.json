@@ -7,8 +7,13 @@
     "name": "icompras",
     "slug": "icompras",
     "version": "1.0.0",
-    "assetBundlePatterns": ["**/*"],
-    "plugins": ["expo-font"]
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      "expo-font",
+      "expo-barcode-scanner"
+    ]
   },
   "runtimeVersion": {
     "policy": "sdkVersion"
