@@ -9,6 +9,7 @@ import {
 import HomeSvg from '@assets/home.svg'
 import SearchSvg from '@assets/search.svg'
 import CartSvg from '@assets/cart.svg'
+import FavoriteSvg from '@assets/favorite.svg'
 import RequestSvg from '@assets/request.svg'
 import ProfileSvg from '@assets/profile.svg'
 
@@ -33,6 +34,8 @@ import { OrderHistory } from '@screens/OrderHistory'
 import { SearchProducts } from '@screens/SearchProducts'
 import { AllProductsQuantity } from '@screens/AllProductsQuantity'
 import { AllProductsCashback } from '@screens/AllProductsCashback'
+import { useAuth } from '@hooks/useAuth'
+import { OrderValidation } from '@screens/OrderValidation'
 
 type AppRoutes = {
   home: { userId: string }
@@ -54,6 +57,7 @@ type AppRoutes = {
   category: undefined
   allProductsQuantity: undefined
   allProductsCashback: undefined
+  orderValidation: undefined
 }
 
 export type AppNavigatorRoutesProps = BottomTabNavigationProp<AppRoutes>
@@ -65,6 +69,8 @@ export function AppRoutes() {
   //definição do tamanho dos ícones
   const { sizes, colors } = useTheme()
   const iconSize = sizes[6]
+
+  const { isAdmin } = useAuth()
 
   return (
     <Navigator
@@ -143,6 +149,29 @@ export function AppRoutes() {
           ),
         }}
       />
+
+      {/* 🔐 Rota protegida para Admin */}
+      {isAdmin && (
+        <Screen
+          name="orderValidation"
+          component={OrderValidation}
+          options={{
+            title: 'Carrinho',
+            headerStyle: {
+              backgroundColor: '#c6c9c1',
+            },
+            headerTintColor: '#272525',
+            headerTitleStyle: {
+              fontSize: 18,
+            },
+
+            tabBarIcon: ({ color }) => (
+              <FavoriteSvg fill={color} width={iconSize} height={iconSize} />
+            ),
+          }}
+        />
+      )}
+
       <Screen
         name="profile"
         component={Profile}

@@ -19,9 +19,9 @@ import { useAuth } from '@hooks/useAuth'
 export type AuthContextDataProps = {
   user: UserDTO
   userId: string
+  isAdmin: boolean // <- Aqui
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
-
   isLoadingUserStorageData: boolean
 }
 
@@ -157,6 +157,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
       value={{
         user,
         userId,
+        isAdmin: user?.role === 'ADMIN', // <- Aqui
         signIn,
         signOut,
         isLoadingUserStorageData,
