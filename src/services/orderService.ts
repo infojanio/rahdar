@@ -73,7 +73,7 @@ async function getCurrentOrder(): Promise<OrderResponse> {
   }
 }
 
-async function fetchOrderById(orderId: string): Promise<OrderResponse> {
+export async function fetchOrderById(orderId: string): Promise<OrderResponse> {
   const response = await api.get(`/orders/${orderId}`)
 
   const items = response.data.orderItems.map((item: any) => {
@@ -107,7 +107,7 @@ async function fetchOrderById(orderId: string): Promise<OrderResponse> {
   }
 }
 
-async function validateOrderWithReceipt(orderId: string, receipt: string) {
+export async function validateOrderWithReceipt(orderId: string, receipt: string) {
   await api.post(`/orders/${orderId}/validate`, {
     receipt,
   })

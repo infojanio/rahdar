@@ -57,7 +57,7 @@ type AppRoutes = {
   category: undefined
   allProductsQuantity: undefined
   allProductsCashback: undefined
-  orderValidation: undefined
+  orderValidation: {orderId: string}
 }
 
 export type AppNavigatorRoutesProps = BottomTabNavigationProp<AppRoutes>
