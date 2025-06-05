@@ -13,11 +13,13 @@ import {
   Pressable,
   ScrollView,
   Center,
+  Button,
 } from 'native-base'
 import { api } from '@services/api'
 import { formatCurrency } from '@utils/format'
 import { useFocusEffect } from '@react-navigation/native'
 import { HomeScreen } from '@components/HomeScreen'
+import { Input } from '@components/Input/index'
 
 interface Product {
   id: string
@@ -49,23 +51,40 @@ const STATUS_OPTIONS = [
   { value: 'VALIDATED', label: 'Aprovado' },
   { value: 'EXPIRED', label: 'Recusado' },
 ]
+const PAGE_SIZE = 8 // Quantidade de itens por página
 
 export function OrderValidation() {
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedStatus, setSelectedStatus] = useState<string>('')
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState<string>('PENDING')
+  const [searchId, setSearchId] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
   const toast = useToast()
 
   // Função para carregar os pedidos
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true)
-      const response = await api.get('/orders/history')
+  const fetchOrders = useCallback(
+    async (pageNumber = 1, reset = false) => {
+      try {
+        if (reset) {
+          setLoading(true)
+          setHasMore(true)
+        } else {
+          setLoadingMore(true)
+        }
 
-      const validatedOrders = (response.data.orders || []).map(
-        (order: any) => ({
+        const response = await api.get('/orders', {
+          params: {
+            page: pageNumber,
+            status: selectedStatus,
+            storeId: searchId ? undefined : undefined, // Adicione outros filtros se necessário
+          },
+        })
+
+        const newOrders = (response.data.orders || []).map((order: any) => ({
           id: order.id || '',
           createdAt: order.createdAt || new Date().toISOString(),
           totalAmount: order.totalAmount || 0,
@@ -92,47 +111,80 @@ export function OrderValidation() {
           })),
           cashbackAmount: order.cashbackAmount,
           qrCodeUrl: order.qrCodeUrl || null,
-        }),
-      )
+        }))
 
-      setOrders(validatedOrders)
-      return validatedOrders
-    } catch (error) {
-      console.error('Erro ao buscar pedidos:', error)
-      toast.show({
-        description: 'Erro ao carregar histórico de pedidos',
-        bgColor: 'red.500',
-        placement: 'top',
-      })
-      return []
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
+        if (reset) {
+          setOrders(newOrders)
+        } else {
+          setOrders((prev) => [...prev, ...newOrders])
+        }
+
+        // Verifica se ainda há mais itens para carregar
+        setHasMore(newOrders.length === PAGE_SIZE)
+
+        return newOrders
+      } catch (error) {
+        console.error('Erro ao buscar pedidos:', error)
+        toast.show({
+          description: 'Erro ao carregar histórico de pedidos',
+          bgColor: 'red.500',
+          placement: 'top',
+        })
+        return []
+      } finally {
+        if (reset) {
+          setLoading(false)
+        }
+        setLoadingMore(false)
+        setRefreshing(false)
+      }
+    },
+    [selectedStatus, searchId, toast],
+  )
+
+  // Carrega mais itens quando chegar no final da lista
+  const loadMoreOrders = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      const nextPage = page + 1
+      setPage(nextPage)
+      fetchOrders(nextPage)
     }
-  }, [toast])
+  }, [page, loadingMore, hasMore, fetchOrders])
 
-  // Atualiza os pedidos quando a tela recebe foco
+  // Atualiza os pedidos quando a tela recebe foco ou filtros mudam
   useFocusEffect(
     useCallback(() => {
-      fetchOrders()
+      setPage(1)
+      fetchOrders(1, true)
     }, [fetchOrders]),
   )
 
-  // Filtra os pedidos quando o status selecionado muda
+  // Filtra os pedidos quando o status ou ID de busca muda
   useEffect(() => {
-    if (selectedStatus === '') {
-      setFilteredOrders(orders)
-    } else {
-      setFilteredOrders(
-        orders.filter((order) => order.status === selectedStatus),
+    setPage(1)
+    fetchOrders(1, true)
+  }, [selectedStatus, searchId, fetchOrders])
+
+  // Filtra os pedidos localmente para pesquisa
+  useEffect(() => {
+    let result = [...orders]
+
+    // Filtro por ID (primeiro bloco)
+    if (searchId.trim() !== '') {
+      const searchTerm = searchId.trim().toLowerCase()
+      result = result.filter((order) =>
+        order.id.toLowerCase().includes(searchTerm),
       )
     }
-  }, [selectedStatus, orders])
+
+    setFilteredOrders(result)
+  }, [searchId, orders])
 
   // Função para atualização manual (pull-to-refresh)
   const handleRefresh = async () => {
     setRefreshing(true)
-    await fetchOrders()
+    setPage(1)
+    await fetchOrders(1, true)
   }
 
   const getStatusColor = (status: string) => {
@@ -159,6 +211,47 @@ export function OrderValidation() {
     }, 0)
   }
 
+  const validateOrder = async (orderId: string) => {
+    try {
+      await api.patch(`/orders/${orderId}/validate`)
+      toast.show({
+        description: 'Cashback aprovado com sucesso!',
+        bgColor: 'green.500',
+        placement: 'top',
+      })
+      setPage(1)
+      fetchOrders(1, true) // Recarrega os pedidos após validação
+    } catch (error) {
+      console.error('Erro ao validar pedido:', error)
+      toast.show({
+        description: 'Erro ao aprovar cashback',
+        bgColor: 'red.500',
+        placement: 'top',
+      })
+    }
+  }
+
+  // Renderiza o footer da lista (loading ou fim dos dados)
+  const renderFooter = () => {
+    if (loadingMore) {
+      return (
+        <Center my={4}>
+          <Spinner size="lg" />
+        </Center>
+      )
+    }
+
+    if (!hasMore && orders.length > 0) {
+      return (
+        <Center my={4}>
+          <Text color="gray.500">Não há mais pedidos para carregar</Text>
+        </Center>
+      )
+    }
+
+    return null
+  }
+
   if (loading) {
     return (
       <Box flex={1} justifyContent="center" alignItems="center">
@@ -169,72 +262,75 @@ export function OrderValidation() {
 
   return (
     <Box flex={1} bg="gray.50" safeArea>
-      <HomeScreen title="Meus Pedidos" />
+      <HomeScreen title="Validação de Pedidos" />
 
-      {/* Filtro por Status com Pressable */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        mb={4}
-        py={2}
-      >
-        <HStack space={1} mb={2}>
-          {STATUS_OPTIONS.map((option) => (
-            <Pressable
-              key={`status-${option.value}`}
-              onPress={() => setSelectedStatus(option.value)}
-            >
-              <Box
-                mr={3}
-                w={24}
-                h={10}
-                borderRadius="2xl"
-                bg={
-                  selectedStatus === option.value ? 'primary.500' : 'gray.200'
-                }
+      {/* Filtros */}
+      <Box px={4} py={2}>
+        {/* Filtro por ID */}
+        <HStack bg={'gray.50'}>
+          <Box flex={1} ml={2} mt={2}>
+            <Input
+              placeholder="Buscar por ID (ex: ABC123)"
+              value={searchId}
+              onChangeText={setSearchId}
+            />
+          </Box>
+
+          <Box mr={1} ml={1} mt={1} alignItems={'center'}>
+            <Button onPress={() => setSearchId('')} variant="outline">
+              Limpar
+            </Button>
+          </Box>
+        </HStack>
+
+        {/* Filtro por Status */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <HStack space={2}>
+            {STATUS_OPTIONS.map((option) => (
+              <Pressable
+                key={`status-${option.value}`}
+                onPress={() => setSelectedStatus(option.value)}
               >
-                <Center>
+                <Box
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  bg={
+                    selectedStatus === option.value ? 'primary.500' : 'gray.200'
+                  }
+                >
                   <Text
                     color={
                       selectedStatus === option.value ? 'white' : 'gray.700'
                     }
                     fontWeight="medium"
-                    alignItems={'center'}
-                    justifyContent={'center'}
-                    ml={2}
-                    mt={2}
                   >
                     {option.label}
                   </Text>
-                </Center>
-              </Box>
-            </Pressable>
-          ))}
-        </HStack>
-      </ScrollView>
+                </Box>
+              </Pressable>
+            ))}
+          </HStack>
+        </ScrollView>
+      </Box>
 
       {filteredOrders.length === 0 ? (
-        <Box
-          bg="white"
-          pb={280}
-          borderRadius="md"
-          alignItems={'center'}
-          fontSize={'16'}
-        >
-          <Text color="red.500">
-            {selectedStatus === ''
-              ? 'Nenhum pedido encontrado'
-              : `Nenhum pedido com status ${STATUS_OPTIONS.find(
-                  (o) => o.value === selectedStatus,
-                )?.label.toLowerCase()}`}
+        <Center flex={1}>
+          <Text color="gray.500">
+            {searchId || selectedStatus !== 'PENDING'
+              ? 'Nenhum pedido encontrado com os filtros atuais'
+              : 'Nenhum pedido disponível para validação'}
           </Text>
-        </Box>
+        </Center>
       ) : (
         <FlatList
           data={filteredOrders}
+          maxToRenderPerBatch={8} // Limita quantos itens são renderizados por lote
+          updateCellsBatchingPeriod={50} // Tempo entre renderizações em ms
+          windowSize={10} // Quantos itens são mantidos na memória
           keyExtractor={(item) => `order-${item.id}`}
           renderItem={({ item }) => (
-            <Box mb={4} bg="white" p={4} borderRadius="md" shadow={1}>
+            <Box mb={4} mx={4} bg="white" p={4} borderRadius="md" shadow={1}>
               <HStack justifyContent="space-between" mb={2}>
                 <Text fontWeight="bold">Pedido #{item.id.substring(0, 8)}</Text>
                 <Badge colorScheme={getStatusColor(item.status)}>
@@ -291,7 +387,7 @@ export function OrderValidation() {
 
               <Divider my={2} />
 
-              <VStack space={2}>
+              <VStack space={2} mb={4}>
                 <HStack justifyContent="space-between">
                   <Text fontWeight="bold">Subtotal:</Text>
                   <Text>{formatCurrency(item.totalAmount)}</Text>
@@ -304,11 +400,24 @@ export function OrderValidation() {
                   </Text>
                 </HStack>
               </VStack>
+
+              {item.status === 'PENDING' && (
+                <Button
+                  onPress={() => validateOrder(item.id)}
+                  bg="green.600"
+                  _pressed={{ bg: 'green.700' }}
+                >
+                  Validar Cashback
+                </Button>
+              )}
             </Box>
           )}
           contentContainerStyle={{ paddingBottom: 20 }}
           refreshing={refreshing}
           onRefresh={handleRefresh}
+          onEndReached={loadMoreOrders}
+          onEndReachedThreshold={0.1}
+          ListFooterComponent={renderFooter}
         />
       )}
     </Box>

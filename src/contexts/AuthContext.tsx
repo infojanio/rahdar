@@ -76,7 +76,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
       console.log('[AuthContext] Fazendo login...')
 
       const { data } = await api.post('/sessions', { email, password })
-      console.log('[AuthContext] Resposta da API:', data)
+      // console.log('[AuthContext] Resposta da API:', data)
 
       if (data.user && data.accessToken && data.refreshToken) {
         await storageUserAndTokenSave(
