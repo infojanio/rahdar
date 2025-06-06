@@ -9,11 +9,18 @@ export type CashbackBalanceResponse = {
 
 async function getUserCashbackBalance(): Promise<CashbackBalanceResponse> {
   try {
-    const response = await api.get('/users/cashback/balance')
+    const response = await api.get('/users/balance')
 
     const { balance, totalReceived, totalUsed } = response.data
     console.log('saldo:', response.data)
-    console.log('saldo:', balance, 'total recebido:', totalReceived, 'total usado:', totalUsed)
+    console.log(
+      'saldo:',
+      balance,
+      'total recebido:',
+      totalReceived,
+      'total usado:',
+      totalUsed,
+    )
     return {
       balance: balance || 0,
       totalReceived: totalReceived || 0,

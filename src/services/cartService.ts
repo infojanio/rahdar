@@ -59,7 +59,8 @@ async function getCartFromBackend(): Promise<CartResponse> {
 
     return { items, total, cashbackTotal }
   } catch (error) {
-    console.error('Erro ao buscar carrinho do backend:', error)
+   // console.error('Erro ao buscar carrinho do backend:', error)
+   console.log('Carrinho não carregado:', error)
     throw error
   }
 }

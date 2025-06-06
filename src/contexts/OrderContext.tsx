@@ -28,7 +28,7 @@ export function OrderProvider({ children }: OrderProviderProps) {
 
   async function fetchOrder() {
     try {
-      const backendOrder = await orderService.getOrderFromBackend()
+      const backendOrder = await orderService.getCurrentOrder()
 
       // Garante que cada item tenha o storeId corretamente
       const formattedOrder = backendOrder.items.map((item: any) => ({

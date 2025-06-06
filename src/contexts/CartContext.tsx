@@ -70,8 +70,9 @@ export function CartProvider({ children }: CartProviderProps) {
       // Carrega o estoque para todos os itens do carrinho
       await loadStockInfo(formattedCart)
     } catch (error) {
-      console.error('Erro ao carregar o carrinho:', error)
-      setCartItems([])
+ //     console.error('Erro ao carregar o carrinho:', error)
+  console.log('Erro ao carregar o carrinho:', error) 
+ setCartItems([])
     }
   }
 

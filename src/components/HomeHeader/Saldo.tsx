@@ -1,13 +1,61 @@
-import React, { useState } from 'react'
-import { HStack, Text, IconButton, Icon, VStack } from 'native-base'
+import React, { useEffect, useState } from 'react'
+import {
+  HStack,
+  Text,
+  IconButton,
+  Icon,
+  VStack,
+  Skeleton,
+  useToast,
+} from 'native-base'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useAuth } from '@hooks/useAuth'
+import { api } from '@services/api'
+import { AppError } from '@utils/AppError'
 
 export function Saldo() {
   const [showBalance, setShowBalance] = useState(true)
+  const [balance, setBalance] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const { user } = useAuth()
+  const toast = useToast()
 
-  //const saldo = 124.75 // Você pode pegar esse valor dinamicamente depois
+  async function fetchBalance() {
+    try {
+      setIsLoading(true)
+      const response = await api.get('/users/balance')
+      setBalance(response.data.balance)
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      const errorMessage = isAppError
+        ? error.message
+        : 'Não foi possível carregar o saldo. Tente novamente mais tarde.'
+
+      toast.show({
+        title: errorMessage,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+
+      setBalance(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      fetchBalance()
+    }
+  }, [user])
+
+  // Formatação monetária mais robusta
+  const formatBalance = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value)
+  }
 
   return (
     <VStack mt={2} px={1}>
@@ -15,12 +63,18 @@ export function Saldo() {
         Saldo disponível
       </Text>
 
-      <HStack alignItems="center">
-        <Text fontSize="22" fontWeight="bold" color="white">
-          {showBalance
-            ? `R$ ${(Number(user.balance) || 0).toFixed(2)}`
-            : '••••••'}
-        </Text>
+      <HStack alignItems="center" space={2}>
+        {isLoading ? (
+          <Skeleton h="8" w="32" rounded="md" />
+        ) : (
+          <Text fontSize="22" fontWeight="bold" color="white">
+            {showBalance
+              ? balance !== null
+                ? formatBalance(balance)
+                : 'R$ 0,00'
+              : '••••••'}
+          </Text>
+        )}
 
         <IconButton
           icon={
@@ -33,8 +87,8 @@ export function Saldo() {
           }
           onPress={() => setShowBalance((prev) => !prev)}
           _pressed={{ bg: 'rgba(255,255,255,0.1)' }}
-          ml={2}
           rounded="full"
+          isDisabled={isLoading}
         />
       </HStack>
     </VStack>
