@@ -25,7 +25,7 @@ interface Product {
   name: string
   price: number
   image: string
-  cashbackPercentage: number
+  cashback_percentage: number
 }
 
 interface OrderItem {
@@ -85,7 +85,7 @@ export function OrderConfirmation() {
               name: item.product?.name || item.productId?.name || 'Produto desconhecido',
               price: item.product?.price || item.productId?.price || 0,
               image: item.product?.image || item.productId?.image || 'https://via.placeholder.com/80',
-              cashbackPercentage: item.product?.cashbackPercentage || item.productId?.cashbackPercentage || 0
+              cashback_percentage: item.product?.cashback_percentage || item.productId?.cashback_percentage || 0
             }
           }))
         })
@@ -137,7 +137,7 @@ export function OrderConfirmation() {
 
   const calculateTotalCashback = () => {
     return order.items.reduce((total, item) => {
-      return total + (item.product.price * item.quantity * item.product.cashbackPercentage) / 100
+      return total + (item.product.price * item.quantity * item.product.cashback_percentage) / 100
     }, 0)
   }
 
@@ -179,7 +179,7 @@ export function OrderConfirmation() {
                       {item.quantity}x {formatCurrency(item.product.price)}
                     </Text>
                     <Text color="green.600">
-                      {item.product.cashbackPercentage}% cashback
+                      {item.product.cashback_percentage}% cashback
                     </Text>
                   </HStack>
                   <Text fontWeight="bold" textAlign="right">

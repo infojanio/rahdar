@@ -20,7 +20,7 @@ interface CartItem {
     name: string
     price: string
     image: string
-    cashbackPercentage: number
+    cashback_percentage: number
   }
 }
 
@@ -91,7 +91,7 @@ export function CartScreen() {
               <Text style={styles.name}>{item.product.name}</Text>
               <Text>Qtd: {item.quantity}</Text>
               <Text>Subtotal: R$ {item.subtotal}</Text>
-              <Text>Cashback: {item.product.cashbackPercentage}%</Text>
+              <Text>Cashback: {item.product.cashback_percentage}%</Text>
             </View>
           </View>
         )}

@@ -69,7 +69,7 @@ export function ProductCard({ product, ...rest }: ProductCardProps) {
 
             <Box bg="green.500" rounded="md" pl="1" pr="1">
               <Text fontSize="14" color="gray.100" numberOfLines={1}>
-                {product.cashbackPercentage}% cashback
+                {product.cashback_percentage}% cashback
               </Text>
             </Box>
           </Center>

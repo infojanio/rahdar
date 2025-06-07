@@ -18,7 +18,7 @@ interface CartItemProps {
       name: string
       price: number
       image?: string
-      cashbackPercentage: number
+      cashback_percentage: number
     }
     quantity: number
   }
@@ -58,7 +58,7 @@ export const CartItem = ({ item }: CartItemProps) => {
   }
 
   const subtotal = item.product.price * item.quantity
-  const cashback = (subtotal * item.product.cashbackPercentage) / 100
+  const cashback = (subtotal * item.product.cashback_percentage) / 100
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
@@ -91,7 +91,7 @@ export const CartItem = ({ item }: CartItemProps) => {
           <Text style={styles.price}>R$ {item.product.price.toFixed(2)}</Text>
           <View style={styles.cashbackBadge}>
             <Text style={styles.cashbackText}>
-              {item.product.cashbackPercentage}% cashback
+              {item.product.cashback_percentage}% cashback
             </Text>
           </View>
         </View>

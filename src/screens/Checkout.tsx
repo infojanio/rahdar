@@ -10,6 +10,8 @@ import {
   Divider,
   Checkbox,
   useToast,
+  IconButton,
+  ArrowBackIcon,
 } from 'native-base'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { Alert } from 'react-native'
@@ -29,7 +31,7 @@ interface CartItem {
     name: string
     price: number
     image: string
-    cashbackPercentage: number
+    cashback_percentage: number
     storeId: string
   }
   quantity: number
@@ -65,7 +67,7 @@ export function Checkout() {
           sum +
           (item.product.price *
             item.quantity *
-            item.product.cashbackPercentage) /
+            item.product.cashback_percentage) /
             100,
         0,
       )
@@ -82,7 +84,7 @@ export function Checkout() {
           name: item.name,
           price: item.price,
           image: item.image,
-          cashbackPercentage: item.cashbackPercentage ?? 0,
+          cashback_percentage: item.cashback_percentage ?? 0,
           storeId: item.storeId ?? '',
         },
       }))
@@ -157,6 +159,13 @@ export function Checkout() {
     })
   }
 
+  //voltar a tela anterior
+ 
+  function handleGoBack() {
+     navigation.goBack()
+    
+  }
+
   async function handleConfirmOrder() {
     if (!user?.id) {
       Alert.alert('Erro', 'Usuário não autenticado. Faça login novamente.')
@@ -223,9 +232,8 @@ export function Checkout() {
     
     <Box flex={1} bg="white" px={4} py={6}>
       
-      <HomeScreen title={' '} />
-      
-      <Text fontSize="xl" fontWeight="bold" mb={4}>
+      <ArrowBackIcon onPress={()=> handleGoBack()}/>      
+      <Text fontSize="16" fontWeight="bold" mt={2} textAlign={'center'}>
         Resumo do Pedido
       </Text>
       <FlatList
@@ -291,7 +299,8 @@ export function Checkout() {
       <Divider my={4} />
       
       {/* Resumo financeiro */}
-      <VStack space={2}>
+      <VStack >
+        <Box bg={'gray.100'}>
         <HStack justifyContent="space-between">
           <Text fontSize="md">Subtotal:</Text>
           <Text fontSize="md">{formatCurrency(totalAmount)}</Text>
@@ -305,12 +314,13 @@ export function Checkout() {
             </Text>
           </HStack>
         )}
+        </Box>
         
         <HStack justifyContent="space-between" mt={2}>
-          <Text fontSize="20" fontWeight="bold">
+          <Text fontSize="16" fontWeight="bold">
             Total:
           </Text>
-          <Text fontSize="20" fontWeight="bold">
+          <Text fontSize="18" fontWeight="bold">
             {formatCurrency(totalAmount - discountApplied)}
           </Text>
         </HStack>

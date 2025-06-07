@@ -33,7 +33,7 @@ type Product = {
   description: string
   price: number
   image: string
-  cashbackPercentage: number
+  cashback_percentage: number
   store: {
     id: string
     name: string
@@ -64,7 +64,7 @@ export function ProductDetails() {
         setProduct({
           ...data,
           price: Number(data.price),
-          cashbackPercentage: Number(data.cashbackPercentage),
+          cashback_percentage: Number(data.cashback_percentage),
         })
       } catch (error) {
         const title =
@@ -94,7 +94,7 @@ export function ProductDetails() {
       image: product.image,
       price: product.price,
       quantity: 1,
-      cashbackPercentage: product.cashbackPercentage,
+      cashback_percentage: product.cashback_percentage,
       storeId: product.store.id,
     })
 
@@ -139,7 +139,7 @@ export function ProductDetails() {
                 R$ {product.price.toFixed(2)}
               </Text>
               <Text fontSize="16" color="green.600" fontWeight="medium">
-                {product.cashbackPercentage }%  de cashback
+                {product.cashback_percentage }%  de cashback
               </Text>
             </HStack>
 

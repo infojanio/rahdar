@@ -12,7 +12,7 @@ export type CartItemResponse = {
   image: string
   price: number
   quantity: number
-  cashbackPercentage: number
+  cashback_percentage: number
   storeId: string
 }
 
@@ -40,7 +40,7 @@ async function getCartFromBackend(): Promise<CartResponse> {
         image: product?.image || '',
         price: product?.price || 0,
         quantity: item.quantity,
-        cashbackPercentage: product?.cashbackPercentage || 0,
+        cashback_percentage: product?.cashback_percentage || 0,
         storeId: product.storeId || '15c26392-6a84-425c-b0ad-951463e27e67', // Aqui, o storeId é atribuído
       }
     })
@@ -51,7 +51,7 @@ async function getCartFromBackend(): Promise<CartResponse> {
     )
     const cashbackTotal = items.reduce(
       (acc, item) =>
-        acc + (item.price * item.quantity * item.cashbackPercentage) / 100,
+        acc + (item.price * item.quantity * item.cashback_percentage) / 100,
       0,
     )
 

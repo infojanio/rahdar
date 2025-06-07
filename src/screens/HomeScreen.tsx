@@ -17,7 +17,7 @@ interface Product {
   name: string
   price: number
   image?: string
-  cashbackPercentage: number
+  cashback_percentage: number
 }
 
 interface Store {
@@ -55,7 +55,7 @@ export const HomeScreen = () => {
   const totalCashback = cart.items.reduce(
     (sum, item) =>
       sum +
-      (item.product.price * item.quantity * item.product.cashbackPercentage) /
+      (item.product.price * item.quantity * item.product.cashback_percentage) /
         100,
     0,
   )

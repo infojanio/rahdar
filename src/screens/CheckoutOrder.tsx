@@ -26,7 +26,7 @@ interface OrderItem {
     name: string
     price: number
     image: string
-    cashbackPercentage: number
+    cashback_percentage: number
     storeId: string
   }
   quantity: number
@@ -55,7 +55,7 @@ export function CheckoutOrder() {
           name: item.name,
           price: item.price,
           image: item.image,
-          cashbackPercentage: item.cashbackPercentage ?? 0,
+          cashback_percentage: item.cashback_percentage ?? 0,
           storeId: item.storeId ?? '', // Garantindo que o storeId seja atribuído corretamente
         },
       }))
@@ -123,7 +123,7 @@ export function CheckoutOrder() {
               sum +
               (item.product.price *
                 item.quantity *
-                item.product.cashbackPercentage) /
+                item.product.cashback_percentage) /
                 100,
             0,
           )
@@ -193,7 +193,7 @@ export function CheckoutOrder() {
                 sum +
                 (item.product.price *
                   item.quantity *
-                  item.product.cashbackPercentage) /
+                  item.product.cashback_percentage) /
                   100,
               0,
             ),
