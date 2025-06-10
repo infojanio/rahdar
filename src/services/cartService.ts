@@ -1,5 +1,4 @@
 // src/services/cartService.ts
-import { useRoute } from '@react-navigation/native'
 import { api } from '@services/api'
 
 export type CartItemRequest = {
@@ -13,24 +12,8 @@ export type CartItemResponse = {
   image: string
   price: number
   quantity: number
-  cashbackPercentage: number
+  cashback_percentage: number
   storeId: string
-}
-
-export type OrderItemResponse = {
-  productId: string
-  name: string
-  image: string
-  price: number
-  quantity: number
-  cashbackPercentage: number
-  storeId: string
-}
-
-export type OrderResponse = {
-  items: OrderItemResponse[]
-  total: number
-  cashbackTotal: number
 }
 
 export type CartResponse = {
@@ -57,7 +40,7 @@ async function getCartFromBackend(): Promise<CartResponse> {
         image: product?.image || '',
         price: product?.price || 0,
         quantity: item.quantity,
-        cashbackPercentage: product?.cashbackPercentage || 0,
+        cashback_percentage: product?.cashback_percentage || 0,
         storeId: product.storeId || '15c26392-6a84-425c-b0ad-951463e27e67', // Aqui, o storeId é atribuído
       }
     })
@@ -68,7 +51,7 @@ async function getCartFromBackend(): Promise<CartResponse> {
     )
     const cashbackTotal = items.reduce(
       (acc, item) =>
-        acc + (item.price * item.quantity * item.cashbackPercentage) / 100,
+        acc + (item.price * item.quantity * item.cashback_percentage) / 100,
       0,
     )
 
@@ -76,49 +59,8 @@ async function getCartFromBackend(): Promise<CartResponse> {
 
     return { items, total, cashbackTotal }
   } catch (error) {
-    console.error('Erro ao buscar carrinho do backend:', error)
-    throw error
-  }
-}
-
-async function getOrderFromBackend(): Promise<OrderResponse> {
-  const route = useRoute()
-  const { orderId } = route.params as { orderId: string }
-  try {
-    const response = await api.get(`/orders/${orderId}`)
-    console.log('Resposta do backend:', response.data) // Log da resposta crua
-
-    const rawItems = response.data.orderItems
-
-    const items: OrderItemResponse[] = rawItems.map((item: any) => {
-      console.log('Item processado:', item) // Verificando cada item
-      const product = item.product
-      return {
-        productId: item.productId,
-        name: product?.name || 'Produto desconhecido',
-        image: product?.image || '',
-        price: product?.price || 0,
-        quantity: item.quantity,
-        cashbackPercentage: product?.cashbackPercentage || 0,
-        storeId: product.storeId || '15c26392-6a84-425c-b0ad-951463e27e67', // Aqui, o storeId é atribuído
-      }
-    })
-
-    const total = items.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0,
-    )
-    const cashbackTotal = items.reduce(
-      (acc, item) =>
-        acc + (item.price * item.quantity * item.cashbackPercentage) / 100,
-      0,
-    )
-
-    console.log('Pedido processado:', { items, total, cashbackTotal })
-
-    return { items, total, cashbackTotal }
-  } catch (error) {
-    console.error('Erro ao buscar carrinho do backend:', error)
+    // console.error('Erro ao buscar carrinho do backend:', error)
+    console.log('Carrinho não carregado:', error)
     throw error
   }
 }
@@ -188,7 +130,6 @@ async function checkoutCart(): Promise<{ success: boolean; orderId: string }> {
 }
 
 export const cartService = {
-  getOrderFromBackend,
   getCartFromBackend,
   addToCart,
   updateCartItem,

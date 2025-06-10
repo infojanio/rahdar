@@ -26,7 +26,7 @@ interface Product {
   name: string
   price: number
   image: string | null
-  cashbackPercentage: number
+  cashback_percentage: number
 }
 
 interface OrderItem {
@@ -37,6 +37,7 @@ interface OrderItem {
 
 interface Order {
   id: string
+  userId: string
   createdAt: string
   totalAmount: number
   status: string
@@ -103,9 +104,9 @@ export function OrderValidation() {
                 item.product?.image ||
                 item.productId?.image ||
                 DEFAULT_PRODUCT_IMAGE,
-              cashbackPercentage:
-                item.product?.cashbackPercentage ||
-                item.productId?.cashbackPercentage ||
+              cashback_percentage:
+                item.product?.cashback_percentage ||
+                item.productId?.cashback_percentage ||
                 0,
             },
           })),
@@ -206,7 +207,7 @@ export function OrderValidation() {
     }
     return order.items.reduce((total, item) => {
       const price = item.product?.price || 0
-      const percentage = item.product?.cashbackPercentage || 0
+      const percentage = item.product?.cashback_percentage || 0
       return total + (price * item.quantity * percentage) / 100
     }, 0)
   }
@@ -377,7 +378,7 @@ export function OrderValidation() {
                           {formatCurrency(orderItem.product.price)}
                         </Text>
                         <Text color="green.600">
-                          {orderItem.product.cashbackPercentage}% cashback
+                          {orderItem.product.cashback_percentage}% cashback
                         </Text>
                       </HStack>
                     </VStack>

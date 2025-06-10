@@ -33,7 +33,7 @@ type Product = {
   description: string
   price: number
   image: string
-  cashbackPercentage: number
+  cashback_percentage: number
   store: {
     id: string
     name: string
@@ -50,6 +50,11 @@ export function ProductDetails() {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
 
+  //voltar a tela anterior
+  function handleGoBack() {
+    navigation.goBack()
+  }
+
   useEffect(() => {
     async function fetchProduct() {
       try {
@@ -59,7 +64,7 @@ export function ProductDetails() {
         setProduct({
           ...data,
           price: Number(data.price),
-          cashbackPercentage: Number(data.cashbackPercentage),
+          cashback_percentage: Number(data.cashback_percentage),
         })
       } catch (error) {
         const title =
@@ -89,7 +94,7 @@ export function ProductDetails() {
       image: product.image,
       price: product.price,
       quantity: 1,
-      cashbackPercentage: product.cashbackPercentage,
+      cashback_percentage: product.cashback_percentage,
       storeId: product.store.id,
     })
 
@@ -133,8 +138,8 @@ export function ProductDetails() {
               <Text fontSize="20" fontWeight="bold" color="red.600">
                 R$ {product.price.toFixed(2)}
               </Text>
-              <Text fontSize="md" color="green.600" fontWeight="medium">
-                Cashback: R$ {product.cashbackPercentage.toFixed(2)}
+              <Text fontSize="16" color="green.600" fontWeight="medium">
+                {product.cashback_percentage}% de cashback
               </Text>
             </HStack>
 

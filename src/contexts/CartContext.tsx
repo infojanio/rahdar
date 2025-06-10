@@ -8,7 +8,7 @@ type CartItem = {
   image: string
   price: number
   quantity: number
-  cashbackPercentage: number
+  cashback_percentage: number
   storeId: string
 }
 
@@ -61,7 +61,7 @@ export function CartProvider({ children }: CartProviderProps) {
         image: item.image,
         price: item.price,
         quantity: item.quantity,
-        cashbackPercentage: item.cashbackPercentage ?? 0,
+        cashback_percentage: item.cashback_percentage ?? 0,
         storeId: item.storeId ?? '',
       }))
 
@@ -70,7 +70,8 @@ export function CartProvider({ children }: CartProviderProps) {
       // Carrega o estoque para todos os itens do carrinho
       await loadStockInfo(formattedCart)
     } catch (error) {
-      console.error('Erro ao carregar o carrinho:', error)
+      //     console.error('Erro ao carregar o carrinho:', error)
+      console.log('Erro ao carregar o carrinho:', error)
       setCartItems([])
     }
   }

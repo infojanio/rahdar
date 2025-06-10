@@ -161,7 +161,7 @@ export function Cart() {
         name: item.name,
         price: item.price,
         image: item.image,
-        cashbackPercentage: item.cashbackPercentage,
+        cashback_percentage: item.cashback_percentage,
         storeId: item.storeId,
         quantity: item.quantity,
       })),

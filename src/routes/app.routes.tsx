@@ -14,12 +14,10 @@ import RequestSvg from '@assets/request.svg'
 import ProfileSvg from '@assets/profile.svg'
 
 import { Home } from '@screens/Home'
-import { Search } from '@screens/Search'
 
 import { Cart } from '@screens/Cart'
 import { Checkout } from '@screens/Checkout'
 
-import { Request } from '@screens/Request'
 import { Profile } from '@screens/Profile'
 import { ProductList } from '@screens/Product/ProductList'
 import { ProductDetails } from '@screens/ProductDetails'
@@ -49,7 +47,11 @@ type AppRoutes = {
 
   searchProducts: { productId: string }
   checkout: { cart: StorageCartProps[] }
-  orderConfirmation: { orderId: string } // Modificado para receber apenas o ID
+  orderConfirmation: {
+    orderId: string
+    cashbackEarned?: number
+    cashbackUsed?: number
+  } // Modificado para receber apenas o ID
   orderHistory: undefined //
   productDetails: { productId: string }
   productBySubCategory: { categoryId: string }
@@ -57,7 +59,7 @@ type AppRoutes = {
   category: undefined
   allProductsQuantity: undefined
   allProductsCashback: undefined
-  orderValidation: undefined
+  orderValidation: { orderId: string }
 }
 
 export type AppNavigatorRoutesProps = BottomTabNavigationProp<AppRoutes>

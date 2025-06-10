@@ -7,7 +7,7 @@ export type ProductDTO = {
   price: number
   quantity: number
   image: string
-  cashbackPercentage: number
+  cashback_percentage: number
   store_id: string
   subcategory_id: string
   status: boolean
