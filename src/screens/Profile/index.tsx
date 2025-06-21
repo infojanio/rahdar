@@ -78,9 +78,7 @@ export function Profile() {
 
           <View>
             <Text style={styles.label}>Pendente</Text>
-            <Text style={styles.valuePending}>
-              R$ {pendingCashback.toFixed(2)}
-            </Text>
+            <Text style={styles.valuePending}>R$ {pendingCashback}</Text>
           </View>
         </View>
 

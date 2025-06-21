@@ -55,10 +55,15 @@ export function Checkout() {
   const { clearCart } = useContext(CartContext)
   const toast = useToast()
 
-  const totalAmount = cartItems.reduce(
+  // Cálculos atualizados
+  const subtotal = cartItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0,
   )
+
+  // Garante que o desconto não ultrapasse o subtotal
+  const effectiveDiscount = Math.min(discountApplied, subtotal)
+  const totalAmount = subtotal - effectiveDiscount
 
   const cashbackToReceive = parseFloat(
     cartItems
@@ -189,6 +194,16 @@ export function Checkout() {
 
       const storeId = storeIds[0]
 
+      if (effectiveDiscount > cashbackBalance) {
+        Alert.alert('Erro', 'Saldo de cashback insuficiente')
+        return
+      }
+
+      if (totalAmount < 0) {
+        Alert.alert('Erro', 'Valor total inválido após desconto')
+        return
+      }
+
       const payload = {
         user_id: user.id,
         store_id: storeId,
@@ -197,33 +212,40 @@ export function Checkout() {
           quantity: item.quantity,
           subtotal: parseFloat((item.quantity * item.product.price).toFixed(2)),
         })),
-        cashback_discount: useCashback ? discountApplied : 0,
+        discount_applied: effectiveDiscount, // Envia o desconto efetivo
+        total_amount: totalAmount, // Envia o total já com desconto
+        use_cashback: useCashback,
       }
-
       console.log('📩 Enviando payload:', payload)
 
-      const res = await api.post('/orders', payload)
-      console.log('Pedido criado:', res.data)
+      const response = await api.post('/orders', payload)
+      console.log('Resposta completa:', response.data)
 
-      const orderId = res.data?.id || res.data?.orderId
+      // Após criar o pedido com sucesso
+      const updatedBalance = await api.get('/users/balance')
+      setCashbackBalance(updatedBalance.data.balance)
 
-      if (orderId) {
-        await clearCart()
-        navigation.navigate('orderConfirmation', {
-          orderId,
-          cashbackEarned: cashbackToReceive,
-          cashbackUsed: useCashback ? discountApplied : 0,
-        })
-        console.log('✅ ID do pedido recebido:', orderId)
-      } else {
-        Alert.alert(
-          'Erro',
-          'O pedido foi criado, mas o ID não foi retornado corretamente.',
-        )
+      // Acesso CORRETO ao ID do pedido
+      const orderId = response.data.order?.id
+
+      if (!orderId) {
+        throw new Error('ID do pedido não retornado pelo servidor')
       }
+
+      console.log('✅ ID do pedido recebido:', orderId)
+
+      await clearCart()
+      navigation.navigate('orderConfirmation', {
+        orderId,
+        cashbackEarned: cashbackToReceive,
+        cashbackUsed: useCashback ? discountApplied : 0,
+      })
     } catch (err) {
       console.error('Erro ao confirmar pedido', err)
-      Alert.alert('Erro', 'Não foi possível confirmar o pedido')
+      Alert.alert(
+        'Erro',
+        err.response?.data?.message || 'Não foi possível confirmar o pedido',
+      )
     } finally {
       setLoading(false)
     }
@@ -302,14 +324,14 @@ export function Checkout() {
         <Box bg={'gray.100'}>
           <HStack justifyContent="space-between">
             <Text fontSize="md">Subtotal:</Text>
-            <Text fontSize="md">{formatCurrency(totalAmount)}</Text>
+            <Text fontSize="md">{formatCurrency(subtotal)}</Text>
           </HStack>
 
           {useCashback && (
             <HStack justifyContent="space-between">
               <Text fontSize="md">Desconto (cashback):</Text>
               <Text fontSize="md" color="green.600">
-                -{formatCurrency(discountApplied)}
+                -{formatCurrency(effectiveDiscount)}
               </Text>
             </HStack>
           )}
@@ -320,7 +342,7 @@ export function Checkout() {
             Total:
           </Text>
           <Text fontSize="18" fontWeight="bold">
-            {formatCurrency(totalAmount - discountApplied)}
+            {formatCurrency(totalAmount)}
           </Text>
         </HStack>
 
