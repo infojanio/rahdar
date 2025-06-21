@@ -39,6 +39,7 @@ interface Order {
   totalAmount: number
   status: string
   items: OrderItem[]
+  discountApplied?: number
   cashbackAmount?: number
   qrCodeUrl?: string | null
 }
@@ -59,7 +60,6 @@ export function OrderHistory() {
   const [refreshing, setRefreshing] = useState(false)
   const toast = useToast()
 
-  // Função para carregar os pedidos
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true)
@@ -70,6 +70,7 @@ export function OrderHistory() {
           id: order.id || '',
           createdAt: order.createdAt || new Date().toISOString(),
           totalAmount: order.totalAmount || 0,
+          discountApplied: order.discountApplied ?? 0,
           status: order.status || 'PENDING',
           items: (order.items || []).map((item: any) => ({
             id: item.id || Math.random().toString(36).substr(2, 9),
@@ -112,14 +113,12 @@ export function OrderHistory() {
     }
   }, [toast])
 
-  // Atualiza os pedidos quando a tela recebe foco
   useFocusEffect(
     useCallback(() => {
       fetchOrders()
     }, [fetchOrders]),
   )
 
-  // Filtra os pedidos quando o status selecionado muda
   useEffect(() => {
     if (selectedStatus === '') {
       setFilteredOrders(orders)
@@ -130,7 +129,6 @@ export function OrderHistory() {
     }
   }, [selectedStatus, orders])
 
-  // Função para atualização manual (pull-to-refresh)
   const handleRefresh = async () => {
     setRefreshing(true)
     await fetchOrders()
@@ -150,9 +148,14 @@ export function OrderHistory() {
   }
 
   const calculateOrderCashback = (order: Order) => {
+    if ((order.discountApplied ?? 0) > 0) {
+      return 0
+    }
+
     if (order.cashbackAmount !== undefined) {
       return order.cashbackAmount
     }
+
     return order.items.reduce((total, item) => {
       const price = item.product?.price || 0
       const percentage = item.product?.cashback_percentage || 0
@@ -172,7 +175,6 @@ export function OrderHistory() {
     <Box flex={1} bg="gray.50" safeArea>
       <HomeScreen title="Meus Pedidos" />
 
-      {/* Filtro por Status com Pressable */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
+import { useCallback } from 'react'
+
 import {
   HStack,
   Text,
@@ -43,11 +46,13 @@ export function Saldo() {
     }
   }
 
-  useEffect(() => {
-    if (user) {
-      fetchBalance()
-    }
-  }, [user])
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        fetchBalance()
+      }
+    }, [user]),
+  )
 
   // Formatação monetária mais robusta
   const formatBalance = (value: number) => {

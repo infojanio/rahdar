@@ -37,6 +37,7 @@ interface OrderItem {
 interface OrderData {
   id: string
   totalAmount: number
+  discountApplied?: number
   status: string
   validated_at: string | null
   createdAt: string
@@ -74,6 +75,7 @@ export function OrderConfirmation() {
         setOrder({
           id: orderData.id,
           totalAmount: orderData.totalAmount,
+          discountApplied: orderData.discountApplied ?? 0,
           status: orderData.status,
           validated_at: orderData.validated_at,
           createdAt: orderData.createdAt,
@@ -152,6 +154,8 @@ export function OrderConfirmation() {
     )
   }
 
+  const usedCashback = (order.discountApplied ?? 0) > 0
+
   const calculateTotalCashback = () => {
     return order.items.reduce((total, item) => {
       return (
@@ -211,9 +215,6 @@ export function OrderConfirmation() {
                     <Text color="gray.500">
                       {item.quantity}x {formatCurrency(item.product.price)}
                     </Text>
-                    <Text color="green.600">
-                      {item.product.cashback_percentage}% cashback
-                    </Text>
                   </HStack>
                   <Text fontWeight="bold" textAlign="right">
                     Subtotal:{' '}
@@ -234,12 +235,34 @@ export function OrderConfirmation() {
         <VStack space={2}>
           <HStack justifyContent="space-between">
             <Text fontWeight="bold">Total do Pedido:</Text>
-            <Text>{formatCurrency(order.totalAmount)}</Text>
+            <Text>
+              {formatCurrency(order.totalAmount + (order.discountApplied ?? 0))}
+            </Text>
           </HStack>
+
+          {usedCashback && (
+            <HStack justifyContent="space-between">
+              <Text fontWeight="bold" color="orange.600">
+                Desconto aplicado:
+              </Text>
+              <Text color="orange.600">
+                -{formatCurrency(order.discountApplied ?? 0)} (
+                {Math.round(
+                  ((order.discountApplied ?? 0) /
+                    (order.totalAmount + (order.discountApplied ?? 0))) *
+                    100,
+                )}
+                %)
+              </Text>
+            </HStack>
+          )}
+
           <HStack justifyContent="space-between">
             <Text fontWeight="bold">Cashback Total:</Text>
             <Text color="green.600">
-              {formatCurrency(calculateTotalCashback())}
+              {usedCashback
+                ? formatCurrency(0)
+                : formatCurrency(calculateTotalCashback())}
             </Text>
           </HStack>
         </VStack>

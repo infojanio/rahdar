@@ -40,6 +40,7 @@ interface Order {
   userId: string
   createdAt: string
   totalAmount: number
+  discountApplied?: number
   status: string
   items: OrderItem[]
   cashbackAmount?: number
@@ -52,7 +53,7 @@ const STATUS_OPTIONS = [
   { value: 'VALIDATED', label: 'Aprovado' },
   { value: 'EXPIRED', label: 'Recusado' },
 ]
-const PAGE_SIZE = 8 // Quantidade de itens por página
+const PAGE_SIZE = 8
 
 export function OrderValidation() {
   const [orders, setOrders] = useState<Order[]>([])
@@ -66,7 +67,6 @@ export function OrderValidation() {
   const [hasMore, setHasMore] = useState(true)
   const toast = useToast()
 
-  // Função para carregar os pedidos
   const fetchOrders = useCallback(
     async (pageNumber = 1, reset = false) => {
       try {
@@ -81,7 +81,6 @@ export function OrderValidation() {
           params: {
             page: pageNumber,
             status: selectedStatus,
-            storeId: searchId ? undefined : undefined, // Adicione outros filtros se necessário
           },
         })
 
@@ -89,6 +88,7 @@ export function OrderValidation() {
           id: order.id || '',
           createdAt: order.createdAt || new Date().toISOString(),
           totalAmount: order.totalAmount || 0,
+          discountApplied: order.discountApplied ?? 0,
           status: order.status || 'PENDING',
           items: (order.items || []).map((item: any) => ({
             id: item.id || Math.random().toString(36).substr(2, 9),
@@ -120,9 +120,7 @@ export function OrderValidation() {
           setOrders((prev) => [...prev, ...newOrders])
         }
 
-        // Verifica se ainda há mais itens para carregar
         setHasMore(newOrders.length === PAGE_SIZE)
-
         return newOrders
       } catch (error) {
         console.error('Erro ao buscar pedidos:', error)
@@ -133,17 +131,14 @@ export function OrderValidation() {
         })
         return []
       } finally {
-        if (reset) {
-          setLoading(false)
-        }
+        if (reset) setLoading(false)
         setLoadingMore(false)
         setRefreshing(false)
       }
     },
-    [selectedStatus, searchId, toast],
+    [selectedStatus, toast],
   )
 
-  // Carrega mais itens quando chegar no final da lista
   const loadMoreOrders = useCallback(() => {
     if (!loadingMore && hasMore) {
       const nextPage = page + 1
@@ -152,7 +147,6 @@ export function OrderValidation() {
     }
   }, [page, loadingMore, hasMore, fetchOrders])
 
-  // Atualiza os pedidos quando a tela recebe foco ou filtros mudam
   useFocusEffect(
     useCallback(() => {
       setPage(1)
@@ -160,28 +154,22 @@ export function OrderValidation() {
     }, [fetchOrders]),
   )
 
-  // Filtra os pedidos quando o status ou ID de busca muda
   useEffect(() => {
     setPage(1)
     fetchOrders(1, true)
   }, [selectedStatus, searchId, fetchOrders])
 
-  // Filtra os pedidos localmente para pesquisa
   useEffect(() => {
     let result = [...orders]
-
-    // Filtro por ID (primeiro bloco)
     if (searchId.trim() !== '') {
       const searchTerm = searchId.trim().toLowerCase()
       result = result.filter((order) =>
         order.id.toLowerCase().includes(searchTerm),
       )
     }
-
     setFilteredOrders(result)
   }, [searchId, orders])
 
-  // Função para atualização manual (pull-to-refresh)
   const handleRefresh = async () => {
     setRefreshing(true)
     setPage(1)
@@ -202,9 +190,7 @@ export function OrderValidation() {
   }
 
   const calculateOrderCashback = (order: Order) => {
-    if (order.cashbackAmount !== undefined) {
-      return order.cashbackAmount
-    }
+    if (order.cashbackAmount !== undefined) return order.cashbackAmount
     return order.items.reduce((total, item) => {
       const price = item.product?.price || 0
       const percentage = item.product?.cashback_percentage || 0
@@ -221,7 +207,7 @@ export function OrderValidation() {
         placement: 'top',
       })
       setPage(1)
-      fetchOrders(1, true) // Recarrega os pedidos após validação
+      fetchOrders(1, true)
     } catch (error) {
       console.error('Erro ao validar pedido:', error)
       toast.show({
@@ -232,7 +218,6 @@ export function OrderValidation() {
     }
   }
 
-  // Renderiza o footer da lista (loading ou fim dos dados)
   const renderFooter = () => {
     if (loadingMore) {
       return (
@@ -265,9 +250,7 @@ export function OrderValidation() {
     <Box flex={1} bg="gray.50" safeArea>
       <HomeScreen title="Validação de Pedidos" />
 
-      {/* Filtros */}
       <Box px={4} py={2}>
-        {/* Filtro por ID */}
         <HStack bg={'gray.50'}>
           <Box flex={1} ml={2} mt={2}>
             <Input
@@ -284,7 +267,6 @@ export function OrderValidation() {
           </Box>
         </HStack>
 
-        {/* Filtro por Status */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <HStack space={2}>
             {STATUS_OPTIONS.map((option) => (
@@ -326,93 +308,104 @@ export function OrderValidation() {
       ) : (
         <FlatList
           data={filteredOrders}
-          maxToRenderPerBatch={8} // Limita quantos itens são renderizados por lote
-          updateCellsBatchingPeriod={50} // Tempo entre renderizações em ms
-          windowSize={10} // Quantos itens são mantidos na memória
           keyExtractor={(item) => `order-${item.id}`}
-          renderItem={({ item }) => (
-            <Box mb={4} mx={4} bg="white" p={4} borderRadius="md" shadow={1}>
-              <HStack justifyContent="space-between" mb={2}>
-                <Text fontWeight="bold">Pedido #{item.id.substring(0, 8)}</Text>
-                <Badge colorScheme={getStatusColor(item.status)}>
-                  {STATUS_OPTIONS.find((o) => o.value === item.status)?.label ||
-                    item.status}
-                </Badge>
-              </HStack>
+          renderItem={({ item }) => {
+            const usedCashback = (item.discountApplied ?? 0) > 0
 
-              <Text color="gray.500" mb={3}>
-                {new Date(item.createdAt).toLocaleDateString('pt-BR')}
-              </Text>
-
-              <VStack space={3} mb={3}>
-                {item.items.map((orderItem) => (
-                  <HStack
-                    key={`item-${item.id}-${orderItem.id}`}
-                    space={3}
-                    alignItems="center"
-                  >
-                    <Image
-                      source={{
-                        uri: orderItem.product.image || DEFAULT_PRODUCT_IMAGE,
-                      }}
-                      alt={orderItem.product.name}
-                      size="sm"
-                      borderRadius="md"
-                      fallbackElement={
-                        <Box
-                          bg="gray.200"
-                          size="sm"
-                          borderRadius="md"
-                          justifyContent="center"
-                          alignItems="center"
-                        >
-                          <Text color="gray.500">Sem imagem</Text>
-                        </Box>
-                      }
-                    />
-                    <VStack flex={1}>
-                      <Text fontWeight="medium">{orderItem.product.name}</Text>
-                      <HStack justifyContent="space-between">
-                        <Text color="gray.500">
-                          {orderItem.quantity}x{' '}
-                          {formatCurrency(orderItem.product.price)}
-                        </Text>
-                        <Text color="green.600">
-                          {orderItem.product.cashback_percentage}% cashback
-                        </Text>
-                      </HStack>
-                    </VStack>
-                  </HStack>
-                ))}
-              </VStack>
-
-              <Divider my={2} />
-
-              <VStack space={2} mb={4}>
-                <HStack justifyContent="space-between">
-                  <Text fontWeight="bold">Subtotal:</Text>
-                  <Text>{formatCurrency(item.totalAmount)}</Text>
-                </HStack>
-
-                <HStack justifyContent="space-between">
-                  <Text fontWeight="bold">Cashback:</Text>
-                  <Text color="green.600">
-                    {formatCurrency(calculateOrderCashback(item))}
+            return (
+              <Box mb={4} mx={4} bg="white" p={4} borderRadius="md" shadow={1}>
+                <HStack justifyContent="space-between" mb={2}>
+                  <Text fontWeight="bold">
+                    Pedido #{item.id.substring(0, 8)}
                   </Text>
+                  <Badge colorScheme={getStatusColor(item.status)}>
+                    {STATUS_OPTIONS.find((o) => o.value === item.status)
+                      ?.label || item.status}
+                  </Badge>
                 </HStack>
-              </VStack>
 
-              {item.status === 'PENDING' && (
-                <Button
-                  onPress={() => validateOrder(item.id)}
-                  bg="green.600"
-                  _pressed={{ bg: 'green.700' }}
-                >
-                  Validar Cashback
-                </Button>
-              )}
-            </Box>
-          )}
+                <Text color="gray.500" mb={3}>
+                  {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                </Text>
+
+                <VStack space={3} mb={3}>
+                  {item.items.map((orderItem) => (
+                    <HStack
+                      key={`item-${item.id}-${orderItem.id}`}
+                      space={3}
+                      alignItems="center"
+                    >
+                      <Image
+                        source={{
+                          uri: orderItem.product.image || DEFAULT_PRODUCT_IMAGE,
+                        }}
+                        alt={orderItem.product.name}
+                        size="sm"
+                        borderRadius="md"
+                        fallbackElement={
+                          <Box
+                            bg="gray.200"
+                            size="sm"
+                            borderRadius="md"
+                            justifyContent="center"
+                            alignItems="center"
+                          >
+                            <Text color="gray.500">Sem imagem</Text>
+                          </Box>
+                        }
+                      />
+                      <VStack flex={1}>
+                        <Text fontWeight="medium">
+                          {orderItem.product.name}
+                        </Text>
+                        <HStack justifyContent="space-between">
+                          <Text color="gray.500">
+                            {orderItem.quantity}x{' '}
+                            {formatCurrency(orderItem.product.price)}
+                          </Text>
+                          <Text color="green.600">
+                            {orderItem.product.cashback_percentage}% cashback
+                          </Text>
+                        </HStack>
+                      </VStack>
+                    </HStack>
+                  ))}
+                </VStack>
+
+                <Divider my={2} />
+
+                <VStack space={2} mb={4}>
+                  <HStack justifyContent="space-between">
+                    <Text fontWeight="bold">Subtotal:</Text>
+                    <Text>{formatCurrency(item.totalAmount)}</Text>
+                  </HStack>
+
+                  <HStack justifyContent="space-between">
+                    <Text fontWeight="bold">Cashback:</Text>
+                    {usedCashback ? (
+                      <Text color="red.500" fontWeight="medium">
+                        Compras com desconto não geram cashback
+                      </Text>
+                    ) : (
+                      <Text color="green.600">
+                        {formatCurrency(calculateOrderCashback(item))}
+                      </Text>
+                    )}
+                  </HStack>
+                </VStack>
+
+                {item.status === 'PENDING' && (
+                  <Button
+                    onPress={() => validateOrder(item.id)}
+                    bg="green.600"
+                    _pressed={{ bg: 'green.700' }}
+                  >
+                    Validar Cashback
+                  </Button>
+                )}
+              </Box>
+            )
+          }}
           contentContainerStyle={{ paddingBottom: 20 }}
           refreshing={refreshing}
           onRefresh={handleRefresh}

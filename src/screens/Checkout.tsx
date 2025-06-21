@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
+
+import { useFocusEffect } from '@react-navigation/native'
+import { useCallback } from 'react'
+
 import {
   Box,
   Text,
@@ -8,7 +12,6 @@ import {
   Button,
   FlatList,
   Divider,
-  Checkbox,
   useToast,
   IconButton,
   ArrowBackIcon,
@@ -20,9 +23,7 @@ import { useAuth } from '@hooks/useAuth'
 import { formatCurrency } from '@utils/format'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
 import { StorageCartProps } from '@storage/storageCart'
-import { useContext } from 'react'
 import { CartContext } from '@contexts/CartContext'
-import { HomeScreen } from '@components/HomeScreen'
 
 interface CartItem {
   id: string
@@ -55,13 +56,11 @@ export function Checkout() {
   const { clearCart } = useContext(CartContext)
   const toast = useToast()
 
-  // Cálculos atualizados
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0,
   )
 
-  // Garante que o desconto não ultrapasse o subtotal
   const effectiveDiscount = Math.min(discountApplied, subtotal)
   const totalAmount = subtotal - effectiveDiscount
 
@@ -77,6 +76,27 @@ export function Checkout() {
         0,
       )
       .toFixed(2),
+  )
+
+  useEffect(() => {
+    // Resetar estado de desconto ao abrir
+    setUseCashback(false)
+    setDiscountApplied(0)
+  }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchCashbackBalance = async () => {
+        try {
+          const response = await api.get('/users/balance')
+          setCashbackBalance(response.data.balance || 0)
+        } catch (error) {
+          console.error('Erro ao buscar saldo de cashback:', error)
+        }
+      }
+
+      fetchCashbackBalance()
+    }, []),
   )
 
   useEffect(() => {
@@ -98,12 +118,10 @@ export function Checkout() {
   }, [cart])
 
   useEffect(() => {
-    // Buscar saldo de cashback do usuário
     const fetchCashbackBalance = async () => {
       if (!user?.id) return
 
       try {
-        //const response = await api.get(`/cashbacks/balance/${user.id}`)
         const response = await api.get('/users/balance')
         setCashbackBalance(response.data.balance || 0)
       } catch (error) {
@@ -124,7 +142,6 @@ export function Checkout() {
       toast.show({
         title: 'Saldo insuficiente',
         description: 'Você não possui saldo de cashback disponível.',
-        // status: 'warning',
       })
       return
     }
@@ -132,7 +149,6 @@ export function Checkout() {
     setApplyingCashback(true)
 
     try {
-      // Calcula o valor máximo que pode ser aplicado (o menor entre saldo e total do pedido)
       const maxDiscount = Math.min(cashbackBalance, totalAmount)
       setDiscountApplied(maxDiscount)
       setUseCashback(true)
@@ -142,14 +158,12 @@ export function Checkout() {
         description: `Desconto de ${formatCurrency(
           maxDiscount,
         )} aplicado ao pedido.`,
-        // status: 'success',
       })
     } catch (error) {
       console.error('Erro ao aplicar cashback:', error)
       toast.show({
         title: 'Erro',
         description: 'Não foi possível aplicar o cashback.',
-        // status: 'error',
       })
     } finally {
       setApplyingCashback(false)
@@ -162,11 +176,8 @@ export function Checkout() {
     toast.show({
       title: 'Cashback removido',
       description: 'O desconto foi removido do seu pedido.',
-      // status: 'info',
     })
   }
-
-  //voltar a tela anterior
 
   function handleGoBack() {
     navigation.goBack()
@@ -212,27 +223,18 @@ export function Checkout() {
           quantity: item.quantity,
           subtotal: parseFloat((item.quantity * item.product.price).toFixed(2)),
         })),
-        discount_applied: effectiveDiscount, // Envia o desconto efetivo
-        total_amount: totalAmount, // Envia o total já com desconto
+        discount_applied: effectiveDiscount,
+        total_amount: totalAmount,
         use_cashback: useCashback,
       }
-      console.log('📩 Enviando payload:', payload)
 
       const response = await api.post('/orders', payload)
-      console.log('Resposta completa:', response.data)
 
-      // Após criar o pedido com sucesso
       const updatedBalance = await api.get('/users/balance')
       setCashbackBalance(updatedBalance.data.balance)
 
-      // Acesso CORRETO ao ID do pedido
       const orderId = response.data.order?.id
-
-      if (!orderId) {
-        throw new Error('ID do pedido não retornado pelo servidor')
-      }
-
-      console.log('✅ ID do pedido recebido:', orderId)
+      if (!orderId) throw new Error('ID do pedido não retornado pelo servidor')
 
       await clearCart()
       navigation.navigate('orderConfirmation', {
@@ -283,7 +285,6 @@ export function Checkout() {
 
       <Divider my={4} />
 
-      {/* Seção de Cashback */}
       <VStack space={3} mb={4}>
         <Text fontSize="lg" fontWeight="bold">
           Seu saldo de cashback: {formatCurrency(cashbackBalance)}
@@ -319,7 +320,6 @@ export function Checkout() {
 
       <Divider my={4} />
 
-      {/* Resumo financeiro */}
       <VStack>
         <Box bg={'gray.100'}>
           <HStack justifyContent="space-between">
@@ -347,7 +347,9 @@ export function Checkout() {
         </HStack>
 
         <Text fontSize="md" color="green.600" mt={2}>
-          Cashback esperado: {formatCurrency(cashbackToReceive)}
+          {useCashback
+            ? 'Compras usando Saldo: sem cashback.'
+            : `Cashback esperado: ${formatCurrency(cashbackToReceive)}`}
         </Text>
 
         <Button
