@@ -14,6 +14,8 @@ import {
   ScrollView,
   Center,
   Button,
+  AlertDialog,
+  useDisclose,
 } from 'native-base'
 import { api } from '@services/api'
 import { formatCurrency } from '@utils/format'
@@ -38,6 +40,7 @@ interface OrderItem {
 interface Order {
   id: string
   userId: string
+  user_name: string
   createdAt: string
   totalAmount: number
   discountApplied?: number
@@ -67,6 +70,10 @@ export function OrderValidation() {
   const [hasMore, setHasMore] = useState(true)
   const toast = useToast()
 
+  const { isOpen, onOpen, onClose } = useDisclose()
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const cancelRef = React.useRef(null)
+
   const fetchOrders = useCallback(
     async (pageNumber = 1, reset = false) => {
       try {
@@ -86,6 +93,7 @@ export function OrderValidation() {
 
         const newOrders = (response.data.orders || []).map((order: any) => ({
           id: order.id || '',
+          user_name: order.user_name,
           createdAt: order.createdAt || new Date().toISOString(),
           totalAmount: order.totalAmount || 0,
           discountApplied: order.discountApplied ?? 0,
@@ -190,6 +198,7 @@ export function OrderValidation() {
   }
 
   const calculateOrderCashback = (order: Order) => {
+    if ((order.discountApplied ?? 0) > 0) return 0
     if (order.cashbackAmount !== undefined) return order.cashbackAmount
     return order.items.reduce((total, item) => {
       const price = item.product?.price || 0
@@ -314,10 +323,14 @@ export function OrderValidation() {
 
             return (
               <Box mb={4} mx={4} bg="white" p={4} borderRadius="md" shadow={1}>
+                <Box mb={2}>
+                  <Text fontWeight="normal">Cliente: {item.user_name}</Text>
+                </Box>
                 <HStack justifyContent="space-between" mb={2}>
                   <Text fontWeight="bold">
                     Pedido #{item.id.substring(0, 8)}
                   </Text>
+
                   <Badge colorScheme={getStatusColor(item.status)}>
                     {STATUS_OPTIONS.find((o) => o.value === item.status)
                       ?.label || item.status}
@@ -363,9 +376,11 @@ export function OrderValidation() {
                             {orderItem.quantity}x{' '}
                             {formatCurrency(orderItem.product.price)}
                           </Text>
-                          <Text color="green.600">
-                            {orderItem.product.cashback_percentage}% cashback
-                          </Text>
+                          {(item.discountApplied ?? 0) === 0 && (
+                            <Text color="green.600">
+                              {orderItem.product.cashback_percentage}% cashback
+                            </Text>
+                          )}
                         </HStack>
                       </VStack>
                     </HStack>
@@ -373,30 +388,43 @@ export function OrderValidation() {
                 </VStack>
 
                 <Divider my={2} />
-
-                <VStack space={2} mb={4}>
+                <VStack space={2}>
                   <HStack justifyContent="space-between">
-                    <Text fontWeight="bold">Subtotal:</Text>
+                    <Text fontWeight="bold">Total a pagar:</Text>
                     <Text>{formatCurrency(item.totalAmount)}</Text>
                   </HStack>
 
-                  <HStack justifyContent="space-between">
-                    <Text fontWeight="bold">Cashback:</Text>
-                    {usedCashback ? (
-                      <Text color="red.500" fontWeight="medium">
-                        Compras com desconto não geram cashback
+                  {item.discountApplied && item.discountApplied > 0 ? (
+                    <HStack justifyContent="space-between">
+                      <Text fontWeight="bold" color="orange.600">
+                        Desconto aplicado:
                       </Text>
-                    ) : (
+                      <Text color="orange.600">
+                        -{formatCurrency(item.discountApplied)} (
+                        {Math.round(
+                          ((item.discountApplied ?? 0) /
+                            (item.totalAmount + (item.discountApplied ?? 0))) *
+                            100,
+                        )}
+                        %)
+                      </Text>
+                    </HStack>
+                  ) : (
+                    <HStack justifyContent="space-between">
+                      <Text fontWeight="bold">Cashback:</Text>
                       <Text color="green.600">
                         {formatCurrency(calculateOrderCashback(item))}
                       </Text>
-                    )}
-                  </HStack>
+                    </HStack>
+                  )}
                 </VStack>
 
                 {item.status === 'PENDING' && (
                   <Button
-                    onPress={() => validateOrder(item.id)}
+                    onPress={() => {
+                      setSelectedOrderId(item.id)
+                      onOpen()
+                    }}
                     bg="green.600"
                     _pressed={{ bg: 'green.700' }}
                   >
@@ -414,6 +442,40 @@ export function OrderValidation() {
           ListFooterComponent={renderFooter}
         />
       )}
+
+      <AlertDialog
+        leastDestructiveRef={cancelRef}
+        isOpen={isOpen}
+        onClose={onClose}
+      >
+        <AlertDialog.Content>
+          <AlertDialog.CloseButton />
+          <AlertDialog.Header>Confirmação</AlertDialog.Header>
+          <AlertDialog.Body>
+            Tem certeza que deseja validar?{' '}
+            <Text fontWeight="bold">
+              Pedido: {selectedOrderId?.substring(0, 8)}
+            </Text>
+          </AlertDialog.Body>
+          <AlertDialog.Footer>
+            <Button ref={cancelRef} onPress={onClose} variant="ghost">
+              Cancelar
+            </Button>
+            <Button
+              colorScheme="green"
+              onPress={async () => {
+                if (selectedOrderId) {
+                  await validateOrder(selectedOrderId)
+                  onClose()
+                }
+              }}
+              ml={3}
+            >
+              Validar
+            </Button>
+          </AlertDialog.Footer>
+        </AlertDialog.Content>
+      </AlertDialog>
     </Box>
   )
 }

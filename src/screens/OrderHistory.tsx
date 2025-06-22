@@ -37,9 +37,9 @@ interface Order {
   id: string
   createdAt: string
   totalAmount: number
+  discountApplied?: number
   status: string
   items: OrderItem[]
-  discountApplied?: number
   cashbackAmount?: number
   qrCodeUrl?: string | null
 }
@@ -202,8 +202,6 @@ export function OrderHistory() {
                       selectedStatus === option.value ? 'white' : 'gray.700'
                     }
                     fontWeight="medium"
-                    alignItems={'center'}
-                    justifyContent={'center'}
                     ml={2}
                     mt={2}
                   >
@@ -217,14 +215,8 @@ export function OrderHistory() {
       </ScrollView>
 
       {filteredOrders.length === 0 ? (
-        <Box
-          bg="white"
-          pb={280}
-          borderRadius="md"
-          alignItems={'center'}
-          fontSize={'16'}
-        >
-          <Text color="red.500">
+        <Box bg="white" pb={280} borderRadius="md" alignItems="center">
+          <Text color="red.500" fontSize="16">
             {selectedStatus === ''
               ? 'Nenhum pedido encontrado'
               : `Nenhum pedido com status ${STATUS_OPTIONS.find(
@@ -236,79 +228,105 @@ export function OrderHistory() {
         <FlatList
           data={filteredOrders}
           keyExtractor={(item) => `order-${item.id}`}
-          renderItem={({ item }) => (
-            <Box mb={4} bg="white" p={4} borderRadius="md" shadow={1}>
-              <HStack justifyContent="space-between" mb={2}>
-                <Text fontWeight="bold">Pedido #{item.id.substring(0, 8)}</Text>
-                <Badge colorScheme={getStatusColor(item.status)}>
-                  {STATUS_OPTIONS.find((o) => o.value === item.status)?.label ||
-                    item.status}
-                </Badge>
-              </HStack>
-
-              <Text color="gray.500" mb={3}>
-                {new Date(item.createdAt).toLocaleDateString('pt-BR')}
-              </Text>
-
-              <VStack space={3} mb={3}>
-                {item.items.map((orderItem) => (
-                  <HStack
-                    key={`item-${item.id}-${orderItem.id}`}
-                    space={3}
-                    alignItems="center"
-                  >
-                    <Image
-                      source={{
-                        uri: orderItem.product.image || DEFAULT_PRODUCT_IMAGE,
-                      }}
-                      alt={orderItem.product.name}
-                      size="sm"
-                      borderRadius="md"
-                      fallbackElement={
-                        <Box
-                          bg="gray.200"
-                          size="sm"
-                          borderRadius="md"
-                          justifyContent="center"
-                          alignItems="center"
-                        >
-                          <Text color="gray.500">Sem imagem</Text>
-                        </Box>
-                      }
-                    />
-                    <VStack flex={1}>
-                      <Text fontWeight="medium">{orderItem.product.name}</Text>
-                      <HStack justifyContent="space-between">
-                        <Text color="gray.500">
-                          {orderItem.quantity}x{' '}
-                          {formatCurrency(orderItem.product.price)}
-                        </Text>
-                        <Text color="green.600">
-                          {orderItem.product.cashback_percentage}% cashback
-                        </Text>
-                      </HStack>
-                    </VStack>
-                  </HStack>
-                ))}
-              </VStack>
-
-              <Divider my={2} />
-
-              <VStack space={2}>
-                <HStack justifyContent="space-between">
-                  <Text fontWeight="bold">Subtotal:</Text>
-                  <Text>{formatCurrency(item.totalAmount)}</Text>
-                </HStack>
-
-                <HStack justifyContent="space-between">
-                  <Text fontWeight="bold">Cashback:</Text>
-                  <Text color="green.600">
-                    {formatCurrency(calculateOrderCashback(item))}
+          renderItem={({ item }) => {
+            return (
+              <Box mb={4} bg="white" p={4} borderRadius="md" shadow={1}>
+                <HStack justifyContent="space-between" mb={2}>
+                  <Text fontWeight="bold">
+                    Pedido #{item.id.substring(0, 8)}
                   </Text>
+                  <Badge colorScheme={getStatusColor(item.status)}>
+                    {STATUS_OPTIONS.find((o) => o.value === item.status)
+                      ?.label || item.status}
+                  </Badge>
                 </HStack>
-              </VStack>
-            </Box>
-          )}
+
+                <Text color="gray.500" mb={3}>
+                  {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                </Text>
+
+                <VStack space={3} mb={3}>
+                  {item.items.map((orderItem) => (
+                    <HStack
+                      key={`item-${item.id}-${orderItem.id}`}
+                      space={3}
+                      alignItems="center"
+                    >
+                      <Image
+                        source={{
+                          uri: orderItem.product.image || DEFAULT_PRODUCT_IMAGE,
+                        }}
+                        alt={orderItem.product.name}
+                        size="sm"
+                        borderRadius="md"
+                        fallbackElement={
+                          <Box
+                            bg="gray.200"
+                            size="sm"
+                            borderRadius="md"
+                            justifyContent="center"
+                            alignItems="center"
+                          >
+                            <Text color="gray.500">Sem imagem</Text>
+                          </Box>
+                        }
+                      />
+
+                      <VStack flex={1}>
+                        <Text fontWeight="medium">
+                          {orderItem.product.name}
+                        </Text>
+                        <HStack justifyContent="space-between">
+                          <Text color="gray.500">
+                            {orderItem.quantity}x{' '}
+                            {formatCurrency(orderItem.product.price)}
+                          </Text>
+                          {(item.discountApplied ?? 0) === 0 && (
+                            <Text color="green.600">
+                              {orderItem.product.cashback_percentage}% cashback
+                            </Text>
+                          )}
+                        </HStack>
+                      </VStack>
+                    </HStack>
+                  ))}
+                </VStack>
+
+                <Divider my={2} />
+
+                <VStack space={2}>
+                  <HStack justifyContent="space-between">
+                    <Text fontWeight="bold">Total a pagar:</Text>
+                    <Text>{formatCurrency(item.totalAmount)}</Text>
+                  </HStack>
+
+                  {item.discountApplied && item.discountApplied > 0 ? (
+                    <HStack justifyContent="space-between">
+                      <Text fontWeight="bold" color="orange.600">
+                        Desconto aplicado:
+                      </Text>
+                      <Text color="orange.600">
+                        -{formatCurrency(item.discountApplied)} (
+                        {Math.round(
+                          ((item.discountApplied ?? 0) /
+                            (item.totalAmount + (item.discountApplied ?? 0))) *
+                            100,
+                        )}
+                        %)
+                      </Text>
+                    </HStack>
+                  ) : (
+                    <HStack justifyContent="space-between">
+                      <Text fontWeight="bold">Cashback:</Text>
+                      <Text color="green.600">
+                        {formatCurrency(calculateOrderCashback(item))}
+                      </Text>
+                    </HStack>
+                  )}
+                </VStack>
+              </Box>
+            )
+          }}
           contentContainerStyle={{ paddingBottom: 20 }}
           refreshing={refreshing}
           onRefresh={handleRefresh}
