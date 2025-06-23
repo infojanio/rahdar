@@ -9,9 +9,9 @@ import {
 import HomeSvg from '@assets/home.svg'
 import SearchSvg from '@assets/search.svg'
 import CartSvg from '@assets/cart.svg'
-import FavoriteSvg from '@assets/favorite.svg'
-import RequestSvg from '@assets/request.svg'
-import ProfileSvg from '@assets/profile.svg'
+import CashbackSvg from '@assets/cashback.svg'
+import RequestSvg from '@assets/order.svg'
+import ProfileSvg from '@assets/money2.svg'
 
 import { Home } from '@screens/Home'
 
@@ -168,7 +168,7 @@ export function AppRoutes() {
             },
 
             tabBarIcon: ({ color }) => (
-              <FavoriteSvg fill={color} width={iconSize} height={iconSize} />
+              <CashbackSvg fill={color} width={iconSize} height={iconSize} />
             ),
           }}
         />
