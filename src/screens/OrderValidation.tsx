@@ -454,7 +454,7 @@ export function OrderValidation() {
           <AlertDialog.Body>
             Tem certeza que deseja validar?{' '}
             <Text fontWeight="bold">
-              Pedido: {selectedOrderId?.substring(0, 8)}
+              Pedido: #{selectedOrderId?.substring(0, 8)}
             </Text>
           </AlertDialog.Body>
           <AlertDialog.Footer>

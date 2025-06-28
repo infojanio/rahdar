@@ -32,6 +32,13 @@ async function getUserCashbackBalance(): Promise<CashbackBalanceResponse> {
   }
 }
 
+export async function getUserCashbackStatement() {
+  const response = await api.get('/cashbacks/transactions')
+  console.log('extrato:', response.data.transactions)
+  return response.data.transactions // ou ajuste conforme sua resposta
+}
+
 export const userService = {
   getUserCashbackBalance,
+  getUserCashbackStatement,
 }

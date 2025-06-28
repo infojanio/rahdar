@@ -233,13 +233,6 @@ export function OrderConfirmation() {
         <Divider my={3} />
 
         <VStack space={2}>
-          <HStack justifyContent="space-between">
-            <Text fontWeight="bold">Total do Pedido:</Text>
-            <Text>
-              {formatCurrency(order.totalAmount + (order.discountApplied ?? 0))}
-            </Text>
-          </HStack>
-
           {usedCashback && (
             <HStack justifyContent="space-between">
               <Text fontWeight="bold" color="orange.600">
@@ -256,6 +249,11 @@ export function OrderConfirmation() {
               </Text>
             </HStack>
           )}
+
+          <HStack justifyContent="space-between">
+            <Text fontWeight="bold">Total do Pedido:</Text>
+            <Text>{formatCurrency(order.totalAmount ?? 0)}</Text>
+          </HStack>
 
           <HStack justifyContent="space-between">
             <Text fontWeight="bold">Cashback Total:</Text>

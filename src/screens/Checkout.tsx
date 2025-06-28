@@ -223,8 +223,8 @@ export function Checkout() {
           quantity: item.quantity,
           subtotal: parseFloat((item.quantity * item.product.price).toFixed(2)),
         })),
-        discount_applied: effectiveDiscount,
-        total_amount: totalAmount,
+        discountApplied: effectiveDiscount,
+        totalAmount: totalAmount,
         use_cashback: useCashback,
       }
 
@@ -287,7 +287,7 @@ export function Checkout() {
 
       <VStack space={3} mb={4}>
         <Text fontSize="lg" fontWeight="bold">
-          Seu saldo de cashback: {formatCurrency(cashbackBalance)}
+          Saldo disponível: {formatCurrency(cashbackBalance)}
         </Text>
 
         {useCashback ? (
@@ -348,7 +348,7 @@ export function Checkout() {
 
         <Text fontSize="md" color="green.600" mt={2}>
           {useCashback
-            ? 'Compras usando Saldo: sem cashback.'
+            ? 'Pagamento com cashback!'
             : `Cashback esperado: ${formatCurrency(cashbackToReceive)}`}
         </Text>
 

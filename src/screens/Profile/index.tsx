@@ -12,6 +12,8 @@ import { userService } from '@services/userService'
 import { orderService } from '@services/orderService'
 import { useNavigation } from '@react-navigation/native'
 import { HomeScreen } from '@components/HomeScreen'
+import { SearchProducts } from '@screens/SearchProducts'
+import { AppNavigatorRoutesProps } from '@routes/app.routes'
 
 export function Profile() {
   const [balance, setBalance] = useState(0)
@@ -20,21 +22,32 @@ export function Profile() {
   const [totalUsed, setTotalUsed] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
-  const navigation = useNavigation()
+  const [statement, setStatement] = useState<
+    Array<{
+      id: string
+      type: 'RECEIVE' | 'USE'
+      amount: number
+      created_at: string
+    }>
+  >([])
+
+  const navigation = useNavigation<AppNavigatorRoutesProps>()
 
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true)
 
-      const [balanceData, pending] = await Promise.all([
+      const [balanceData, pending, cashbackStatement] = await Promise.all([
         userService.getUserCashbackBalance(),
         orderService.getPendingCashback(),
+        userService.getUserCashbackStatement(),
       ])
 
       setBalance(balanceData.balance)
       setTotalReceived(balanceData.totalReceived)
       setTotalUsed(balanceData.totalUsed)
       setPendingCashback(pending)
+      setStatement(cashbackStatement)
     } catch (error) {
       console.log('Erro ao carregar dados do perfil:', error)
       Alert.alert('Erro', 'Não foi possível carregar seus dados.')
@@ -48,11 +61,11 @@ export function Profile() {
   }, [fetchData])
 
   const handleViewStatement = () => {
-    navigation.navigate('Statement' as never)
+    navigation.navigate('orderHistory')
   }
 
   const handleUseCashback = () => {
-    navigation.navigate('UseCashback' as never)
+    navigation.navigate('searchProducts' as never)
   }
 
   if (isLoading) {
@@ -75,16 +88,11 @@ export function Profile() {
             <Text style={styles.label}>Disponível</Text>
             <Text style={styles.value}>R$ {balance.toFixed(2)}</Text>
           </View>
-
-          <View>
-            <Text style={styles.label}>Pendente</Text>
-            <Text style={styles.valuePending}>R$ {pendingCashback}</Text>
-          </View>
         </View>
 
         <View style={styles.actions}>
           <TouchableOpacity style={styles.button} onPress={handleViewStatement}>
-            <Text style={styles.buttonText}>Ver Extrato</Text>
+            <Text style={styles.buttonText}>Ver Pedidos</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.button} onPress={handleUseCashback}>
@@ -96,14 +104,36 @@ export function Profile() {
       <View style={styles.summary}>
         <Text style={styles.summaryTitle}>Resumo</Text>
 
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Recebido</Text>
-          <Text style={styles.summaryValue}>R$ {totalReceived.toFixed(2)}</Text>
-        </View>
+        <View style={styles.summary}>
+          <Text style={styles.summaryTitle}>Extrato de Cashback</Text>
 
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Utilizado</Text>
-          <Text style={styles.summaryValue}>R$ {totalUsed.toFixed(2)}</Text>
+          {statement.length === 0 ? (
+            <Text style={styles.summaryLabel}>
+              Nenhuma transação encontrada.
+            </Text>
+          ) : (
+            <>
+              {statement.map((item) => (
+                <View key={item.id} style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>
+                    {item.type === 'RECEIVE' ? 'Recebido' : 'Utilizado'} -{' '}
+                    {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.summaryValue,
+                      {
+                        color: item.type === 'RECEIVE' ? '#16A34A' : '#EF4444',
+                      },
+                    ]}
+                  >
+                    {item.type === 'RECEIVE' ? '+' : '-'} R${' '}
+                    {item.amount.toFixed(2)}
+                  </Text>
+                </View>
+              ))}
+            </>
+          )}
         </View>
       </View>
     </ScrollView>

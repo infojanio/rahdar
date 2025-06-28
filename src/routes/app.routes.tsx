@@ -9,9 +9,9 @@ import {
 import HomeSvg from '@assets/home.svg'
 import SearchSvg from '@assets/search.svg'
 import CartSvg from '@assets/cart.svg'
-import CashbackSvg from '@assets/cashback.svg'
-import RequestSvg from '@assets/order.svg'
-import ProfileSvg from '@assets/money2.svg'
+import CashbackSvg from '@assets/checked.svg'
+import ProfileSvg from '@assets/order.svg'
+import RequestSvg from '@assets/pedidos.svg'
 
 import { Home } from '@screens/Home'
 
@@ -79,15 +79,19 @@ export function AppRoutes() {
       initialRouteName="home"
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 12, // Ajuste conforme o desejado
+          fontWeight: '400',
+        },
         tabBarActiveTintColor: colors.green[500],
         tabBarInactiveTintColor: colors.blueGray[800],
         tabBarStyle: {
           backgroundColor: colors.gray[100],
           borderTopWidth: 1,
-          height: Platform.OS === 'android' ? 'auto' : 48,
-          paddingBottom: sizes[6],
-          paddingTop: sizes[4],
+          height: Platform.OS === 'android' ? 'auto' : 70, // ajuste para dar espaço à label
+          paddingBottom: sizes[4],
+          paddingTop: sizes[2],
         },
       }}
     >
@@ -158,7 +162,7 @@ export function AppRoutes() {
           name="orderValidation"
           component={OrderValidation}
           options={{
-            title: 'Carrinho',
+            title: 'Validar',
             headerStyle: {
               backgroundColor: '#c6c9c1',
             },
@@ -178,7 +182,7 @@ export function AppRoutes() {
         name="profile"
         component={Profile}
         options={{
-          title: 'Perfil',
+          title: 'Extrato',
 
           headerStyle: {
             backgroundColor: '#688633',
