@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useContext } from 'react'
-
-import { useFocusEffect } from '@react-navigation/native'
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native'
 import { useCallback } from 'react'
-
 import {
   Box,
   Text,
@@ -13,10 +15,8 @@ import {
   FlatList,
   Divider,
   useToast,
-  IconButton,
   ArrowBackIcon,
 } from 'native-base'
-import { useNavigation, useRoute } from '@react-navigation/native'
 import { Alert } from 'react-native'
 import { api } from '@services/api'
 import { useAuth } from '@hooks/useAuth'
@@ -49,6 +49,8 @@ export function Checkout() {
   const [useCashback, setUseCashback] = useState(false)
   const [cashbackBalance, setCashbackBalance] = useState(0)
   const [discountApplied, setDiscountApplied] = useState(0)
+  const [orders, setOrders] = useState<any[]>([])
+
   const navigation = useNavigation<AppNavigatorRoutesProps>()
   const route = useRoute()
   const { user } = useAuth()
@@ -78,8 +80,9 @@ export function Checkout() {
       .toFixed(2),
   )
 
+  const hasPending = orders.some((order) => order.status === 'PENDING')
+
   useEffect(() => {
-    // Resetar estado de desconto ao abrir
     setUseCashback(false)
     setDiscountApplied(0)
   }, [])
@@ -95,7 +98,17 @@ export function Checkout() {
         }
       }
 
+      const fetchOrders = async () => {
+        try {
+          const response = await api.get('/orders')
+          setOrders(response.data.orders || [])
+        } catch (error) {
+          console.error('Erro ao buscar pedidos:', error)
+        }
+      }
+
       fetchCashbackBalance()
+      fetchOrders()
     }, []),
   )
 
@@ -117,26 +130,8 @@ export function Checkout() {
     }
   }, [cart])
 
-  useEffect(() => {
-    const fetchCashbackBalance = async () => {
-      if (!user?.id) return
-
-      try {
-        const response = await api.get('/users/balance')
-        setCashbackBalance(response.data.balance || 0)
-      } catch (error) {
-        console.error('Erro ao buscar saldo de cashback:', error)
-      }
-    }
-
-    fetchCashbackBalance()
-  }, [user?.id])
-
   const handleApplyCashback = async () => {
-    if (!user?.id) {
-      Alert.alert('Erro', 'Usuário não autenticado. Faça login novamente.')
-      return
-    }
+    if (!user?.id) return
 
     if (cashbackBalance <= 0) {
       toast.show({
@@ -147,12 +142,10 @@ export function Checkout() {
     }
 
     setApplyingCashback(true)
-
     try {
       const maxDiscount = Math.min(cashbackBalance, totalAmount)
       setDiscountApplied(maxDiscount)
       setUseCashback(true)
-
       toast.show({
         title: 'Cashback aplicado!',
         description: `Desconto de ${formatCurrency(
@@ -179,45 +172,22 @@ export function Checkout() {
     })
   }
 
-  function handleGoBack() {
-    navigation.goBack()
-  }
-
   async function handleConfirmOrder() {
-    if (!user?.id) {
-      Alert.alert('Erro', 'Usuário não autenticado. Faça login novamente.')
-      return
-    }
-
-    if (cartItems.length === 0) return
-
+    if (!user?.id || cartItems.length === 0) return
     setLoading(true)
+
     try {
       const storeIds = Array.from(
         new Set(cartItems.map((item) => item.product.storeId)),
       )
-
       if (storeIds.length > 1) {
         Alert.alert('Erro', 'Seu carrinho contém itens de diferentes lojas.')
-        setLoading(false)
-        return
-      }
-
-      const storeId = storeIds[0]
-
-      if (effectiveDiscount > cashbackBalance) {
-        Alert.alert('Erro', 'Saldo de cashback insuficiente')
-        return
-      }
-
-      if (totalAmount < 0) {
-        Alert.alert('Erro', 'Valor total inválido após desconto')
         return
       }
 
       const payload = {
         user_id: user.id,
-        store_id: storeId,
+        store_id: storeIds[0],
         items: cartItems.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -229,14 +199,12 @@ export function Checkout() {
       }
 
       const response = await api.post('/orders', payload)
-
       const updatedBalance = await api.get('/users/balance')
       setCashbackBalance(updatedBalance.data.balance)
 
       const orderId = response.data.order?.id
-      if (!orderId) throw new Error('ID do pedido não retornado pelo servidor')
-
       await clearCart()
+
       navigation.navigate('orderConfirmation', {
         orderId,
         cashbackEarned: cashbackToReceive,
@@ -246,7 +214,7 @@ export function Checkout() {
       console.error('Erro ao confirmar pedido', err)
       Alert.alert(
         'Erro',
-        err.response?.data?.message || 'Não foi possível confirmar o pedido',
+        err.response?.data?.message || 'Erro ao confirmar o pedido',
       )
     } finally {
       setLoading(false)
@@ -255,10 +223,11 @@ export function Checkout() {
 
   return (
     <Box flex={1} bg="white" px={4} py={6}>
-      <ArrowBackIcon onPress={() => handleGoBack()} />
-      <Text fontSize="16" fontWeight="bold" mt={2} textAlign={'center'}>
+      <ArrowBackIcon onPress={() => navigation.goBack()} />
+      <Text fontSize="16" fontWeight="bold" mt={2} textAlign="center">
         Resumo do Pedido
       </Text>
+
       <FlatList
         data={cartItems}
         keyExtractor={(item) => item.id}
@@ -276,7 +245,7 @@ export function Checkout() {
                 {item.quantity}x {formatCurrency(item.product.price)}
               </Text>
             </VStack>
-            <Text fontWeight="bold" textAlign="right">
+            <Text fontWeight="bold">
               {formatCurrency(item.product.price * item.quantity)}
             </Text>
           </HStack>
@@ -311,17 +280,23 @@ export function Checkout() {
             colorScheme="green"
             onPress={handleApplyCashback}
             isLoading={applyingCashback}
-            isDisabled={cashbackBalance <= 0}
+            isDisabled={cashbackBalance <= 0 || hasPending}
           >
             Usar cashback como desconto
           </Button>
+        )}
+
+        {hasPending && (
+          <Text fontSize="xs" color="red.500">
+            Aguarde a validação do último pedido para usar o saldo.
+          </Text>
         )}
       </VStack>
 
       <Divider my={4} />
 
       <VStack>
-        <Box bg={'gray.100'}>
+        <Box bg="gray.100">
           <HStack justifyContent="space-between">
             <Text fontSize="md">Subtotal:</Text>
             <Text fontSize="md">{formatCurrency(subtotal)}</Text>

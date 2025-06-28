@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
 import {
   View,
   Text,
@@ -56,9 +57,11 @@ export function Profile() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  useFocusEffect(
+    useCallback(() => {
+      fetchData()
+    }, [fetchData]),
+  )
 
   const handleViewStatement = () => {
     navigation.navigate('orderHistory')
