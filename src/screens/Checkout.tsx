@@ -100,7 +100,11 @@ export function Checkout() {
 
       const fetchOrders = async () => {
         try {
-          const response = await api.get('/orders')
+          //  const response = await api.get('/orders')
+          const response = await api.get('/orders/history', {
+            params: { user_id: user.id },
+          })
+          console.log('Pedidos por usuário:', response.data)
           setOrders(response.data.orders || [])
         } catch (error) {
           console.error('Erro ao buscar pedidos:', error)
@@ -212,9 +216,10 @@ export function Checkout() {
       })
     } catch (err) {
       console.error('Erro ao confirmar pedido', err)
+      const error = err as any //corrigir msg erro de tipagem
       Alert.alert(
         'Erro',
-        err.response?.data?.message || 'Erro ao confirmar o pedido',
+        error?.response?.data?.message || 'Erro ao confirmar o pedido',
       )
     } finally {
       setLoading(false)
