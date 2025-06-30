@@ -8,7 +8,7 @@ import {
   VStack,
   useToast,
 } from 'native-base'
-import { useRoute } from '@react-navigation/native'
+import { useNavigation, useRoute } from '@react-navigation/native'
 import { api } from '@services/api'
 import { AppError } from '@utils/AppError'
 
@@ -20,6 +20,7 @@ import { ProductCard } from '@components/Product/ProductCard'
 import { Loading } from '@components/Loading'
 import { HomeScreen } from '@components/HomeScreen'
 import { Category } from '@components/Category'
+import { AppNavigatorRoutesProps } from '@routes/app.routes'
 
 type RouteParams = {
   categoryId: string
@@ -40,6 +41,12 @@ export function ProductsBySubCategory() {
 
   const [products, setProducts] = useState<ProductDTO[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  const navigation = useNavigation<AppNavigatorRoutesProps>()
+
+  function handleOpenProductDetails(productId: string) {
+    navigation.navigate('productDetails', { productId })
+  }
 
   async function fetchSubCategories() {
     try {
@@ -125,7 +132,12 @@ export function ProductsBySubCategory() {
             paddingHorizontal: 16,
           }}
           contentContainerStyle={{ paddingBottom: 16, paddingTop: 8 }}
-          renderItem={({ item }) => <ProductCard product={item} />}
+          renderItem={({ item }) => (
+            <ProductCard
+              product={item}
+              onPress={() => handleOpenProductDetails(item.id)}
+            />
+          )}
           ListEmptyComponent={
             <Text textAlign="center" mt={10}>
               Nenhum produto encontrado para essa subcategoria.
