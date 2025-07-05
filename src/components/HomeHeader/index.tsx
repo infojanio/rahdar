@@ -9,9 +9,10 @@ import {
   Image,
   Icon,
   useTheme,
+  Divider,
 } from 'native-base'
 import { MaterialIcons } from '@expo/vector-icons'
-import MarketPng from '@assets/logoRahdar-preview.png'
+import MarketPng from '@assets/rahdar_white.png'
 import { useAuth } from '@hooks/useAuth'
 import { Saldo } from './Saldo'
 
@@ -21,7 +22,7 @@ export function HomeHeader() {
 
   return (
     <Box
-      bg={'green.600'}
+      bg={'green.700'}
       px={4}
       ml={1.5}
       mr={0.5}
@@ -77,17 +78,28 @@ export function HomeHeader() {
           <Saldo />
         </Box>
 
-        <Box borderRadius="2xl" p={2}>
-          <Image
-            alt="Logo"
-            source={MarketPng}
-            h={10}
-            w={120}
-            borderBottomWidth={'1.8'}
-            borderColor={'yellow.100'}
-            resizeMode="contain"
-          />
-        </Box>
+        <HStack>
+          <Box borderRadius="2xl" p={2}>
+            <Text
+              color="yellow.100"
+              fontSize="16"
+              opacity={0.9}
+              fontStyle={'italic'}
+            >
+              _____________________
+            </Text>
+
+            <Image
+              alt="Logo"
+              source={MarketPng}
+              h={10}
+              w={140}
+              borderBottomWidth={'1.8'}
+              borderColor={'yellow.200'}
+              resizeMode="contain"
+            />
+          </Box>
+        </HStack>
       </HStack>
     </Box>
   )

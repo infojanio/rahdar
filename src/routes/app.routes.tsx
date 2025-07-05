@@ -8,7 +8,7 @@ import {
 
 import HomeSvg from '@assets/home.svg'
 import SearchSvg from '@assets/search.svg'
-import CartSvg from '@assets/cart.svg'
+
 import CashbackSvg from '@assets/checked.svg'
 import ProfileSvg from '@assets/order.svg'
 import RequestSvg from '@assets/pedidos.svg'
@@ -34,6 +34,7 @@ import { AllProductsQuantity } from '@screens/AllProductsQuantity'
 import { AllProductsCashback } from '@screens/AllProductsCashback'
 import { useAuth } from '@hooks/useAuth'
 import { OrderValidation } from '@screens/OrderValidation'
+import { CartTabIcon } from '@components/CartTabIcon.tsx'
 
 type AppRoutes = {
   home: { userId: string }
@@ -130,12 +131,10 @@ export function AppRoutes() {
           headerTitleStyle: {
             fontSize: 18,
           },
-
-          tabBarIcon: ({ color }) => (
-            <CartSvg fill={color} width={iconSize} height={iconSize} />
-          ),
+          tabBarIcon: ({ color }) => <CartTabIcon color={color} />,
         }}
       />
+
       <Screen
         name="orderHistory"
         component={OrderHistory}
