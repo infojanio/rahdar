@@ -105,6 +105,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
       setIsLoadingUserStorageData(true)
 
       setUser({} as UserDTO)
+
       await storageUserRemove()
       await storageAuthTokenRemove()
       delete api.defaults.headers.common['Authorization']

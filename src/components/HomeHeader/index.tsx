@@ -15,10 +15,22 @@ import { MaterialIcons } from '@expo/vector-icons'
 import MarketPng from '@assets/rahdar_white.png'
 import { useAuth } from '@hooks/useAuth'
 import { Saldo } from './Saldo'
+import { useCart } from '@hooks/useCart'
 
 export function HomeHeader() {
   const { user, signOut } = useAuth()
+  const { clearCart } = useCart()
+
   const { colors, sizes } = useTheme()
+
+  //função para deslogar
+  const handleLogout = async () => {
+    try {
+      await signOut() // 🔐 faz logout depois
+    } catch (error) {
+      console.error('Erro ao sair:', error)
+    }
+  }
 
   return (
     <Box
@@ -49,7 +61,7 @@ export function HomeHeader() {
           </Text>
         </VStack>
 
-        <TouchableOpacity onPress={signOut}>
+        <TouchableOpacity onPress={handleLogout}>
           <HStack
             alignItems="center"
             px={2}

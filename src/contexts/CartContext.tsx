@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useEffect, useState } from 'react'
 import { cartService } from '@services/cartService'
+import { useAuth } from '@hooks/useAuth'
 import { api } from '@services/api'
 
 type CartItem = {
@@ -49,6 +50,8 @@ type CartProviderProps = {
 export function CartProvider({ children }: CartProviderProps) {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [stockInfo, setStockInfo] = useState<Record<string, StockInfo>>({})
+
+  const { userId } = useAuth()
 
   // Carrega o carrinho e estoque inicial
   async function fetchCart() {
@@ -230,8 +233,10 @@ export function CartProvider({ children }: CartProviderProps) {
 
   // Efeito para carregar o carrinho inicial
   useEffect(() => {
-    fetchCart()
-  }, [])
+    if (userId) {
+      fetchCart()
+    }
+  }, [userId])
 
   return (
     <CartContext.Provider

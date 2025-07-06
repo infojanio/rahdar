@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useContext, useEffect, useState } from 'react'
 import { Box, VStack, useToast, ScrollView } from 'native-base'
 
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
@@ -19,13 +19,18 @@ import { ProductCashback } from './Product/ProductCashback'
 import { ProductQuantity } from './Product/ProductQuantity'
 import { InstagramReelsCarousel } from './InstagramReelsCarousel'
 import { CashbackRegulationCard } from './CashbackRegulationCard'
+import { CartContext } from '@contexts/CartContext'
 
 export function Home() {
+  const { fetchCart } = useContext(CartContext)
+
   const navigation = useNavigation<AppNavigatorRoutesProps>()
   const toast = useToast()
 
   const [products, setProducts] = useState<ProductDTO[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  const { userId } = useAuth()
 
   function handleOpenProductDetails(productId: string) {
     navigation.navigate('productDetails', { productId })
@@ -58,6 +63,13 @@ export function Home() {
       fetchProducts()
     }, []),
   )
+
+  // Efeito para carregar o carrinho inicial
+  useEffect(() => {
+    if (userId) {
+      fetchCart()
+    }
+  }, [userId])
 
   return (
     <VStack flex={1} bg="gray.100">

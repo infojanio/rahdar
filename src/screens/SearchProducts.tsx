@@ -106,10 +106,11 @@ export function SearchProducts() {
 
     if (formattedQuery === '') {
       // 🔄 Limpar busca → listar todos
-      setIsSearching(false)
-      setPage(1)
-      setProducts([])
-      fetchProducts(true)
+      if (formattedQuery === '') {
+        setIsSearching(false)
+        setPage(1)
+        fetchProducts(true)
+      }
     } else {
       // 🔍 Fazer busca
       searchProducts(formattedQuery)
@@ -181,7 +182,7 @@ export function SearchProducts() {
             <Loading />
           ) : (
             <Text textAlign="center" mt={10}>
-              Nenhum produto encontrado
+              Digite o nome do produto que deseja encontrar!
             </Text>
           )
         }
