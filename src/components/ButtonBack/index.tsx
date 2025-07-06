@@ -6,12 +6,16 @@ import { MaterialIcons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
 
+type Props = {
+  handleLayoutChange: (event: any) => void
+}
+
 //voltar a tela anterior
-export function ButtonBack() {
+export function ButtonBack({ handleLayoutChange }: Props) {
   const navigation = useNavigation<AppNavigatorRoutesProps>()
 
   function handleGoBack() {
-     navigation.goBack()
+    navigation.goBack()
     console.log('voltei')
   }
 

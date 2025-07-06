@@ -24,6 +24,8 @@ import { useToast } from 'native-base'
 import { useForm, Controller } from 'react-hook-form'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { api } from '@services/api'
+import { AppNavigatorRoutesProps } from '@routes/app.routes'
 
 type FormDataProps = {
   email: string
@@ -47,6 +49,7 @@ export function SignIn() {
 
   const { signIn } = useAuth()
   const navigation = useNavigation<AuthNavigatorRoutesProps>()
+  const navigationApp = useNavigation<AppNavigatorRoutesProps>()
   const toast = useToast()
 
   //criando controle para o formulário
@@ -64,23 +67,32 @@ export function SignIn() {
 
   async function handleSignIn({ email, password }: FormDataProps) {
     try {
-      setIsLoading(true) //quando a função for chamada
-      await signIn(email, password)
-      // Alert.alert(email + ' logado')
-    } catch (error) {
-      const isAppError = error instanceof AppError //verifica se o erro foi tratado
+      setIsLoading(true)
 
+      // 1. Faz login e obtém o usuário autenticado
+      const user = await signIn(email, password)
+
+      // 2. Verifica se a localização existe
+      const response = await api.get(`/users/${user.id}/location`)
+
+      if (response?.data?.latitude && response?.data?.longitude) {
+        navigationApp.navigate('home', { userId: user.id }) // Já tem localização, vai para Home
+      } else {
+        navigationApp.navigate('localization', { userId: user.id }) // Redireciona para Location
+      }
+    } catch (error) {
+      const isAppError = error instanceof AppError
       const title = isAppError
         ? error.message
         : 'Não foi possível entrar. Tente novamente mais tarde!'
-
-      setIsLoading(false) //após mostrar a mensagem
 
       toast.show({
         title,
         placement: 'top',
         bgColor: 'red.500',
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 

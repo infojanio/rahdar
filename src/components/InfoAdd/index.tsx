@@ -3,12 +3,16 @@ import { View, Center, Image, Box, Text, VStack } from 'native-base'
 
 import IndicatorPng from '../../assets/down.png'
 
-interface Props {
+interface IProps {
   mBottom: number
   onPress: () => void
 }
 
-export function InfoAdd() {
+type Props = {
+  handleLayoutChange: (event: any) => void
+}
+
+export function InfoAdd({ handleLayoutChange }: Props) {
   return (
     <View
       position={'absolute'}
@@ -22,7 +26,7 @@ export function InfoAdd() {
           size={120}
           source={IndicatorPng}
           defaultSource={IndicatorPng}
-          alt="Pessoa comprando online"
+          alt="Ganhe cashbacks!"
           resizeMode="contain"
           position="relative"
         />

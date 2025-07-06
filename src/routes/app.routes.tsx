@@ -32,9 +32,12 @@ import { OrderHistory } from '@screens/OrderHistory'
 import { SearchProducts } from '@screens/SearchProducts'
 import { AllProductsQuantity } from '@screens/AllProductsQuantity'
 import { AllProductsCashback } from '@screens/AllProductsCashback'
-import { useAuth } from '@hooks/useAuth'
 import { OrderValidation } from '@screens/OrderValidation'
+import { Localization } from '@screens/Localization'
 import { CartTabIcon } from '@components/CartTabIcon.tsx'
+
+import { useAuth } from '@hooks/useAuth'
+import { Redirect } from '@screens/Redirect'
 
 type AppRoutes = {
   home: { userId: string }
@@ -42,10 +45,11 @@ type AppRoutes = {
   search: undefined
   cart: undefined
   request: undefined
+  redirect: undefined
   profile: undefined
   productList: undefined
   signUp: undefined
-
+  localization: { userId: string }
   searchProducts: { productId: string }
   checkout: { cart: StorageCartProps[] }
   orderConfirmation: {
@@ -77,7 +81,7 @@ export function AppRoutes() {
 
   return (
     <Navigator
-      initialRouteName="home"
+      initialRouteName="redirect"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
@@ -201,6 +205,14 @@ export function AppRoutes() {
       />
 
       <Screen
+        name="redirect"
+        component={Redirect}
+        options={{
+          tabBarButton: () => null,
+        }}
+      />
+
+      <Screen
         name="orderConfirmation"
         component={OrderConfirmation}
         //initialParams={{ orderId: '' }} // Definindo um valor inicial para evitar erro
@@ -229,6 +241,15 @@ export function AppRoutes() {
         name="productDetails"
         component={ProductDetails}
         options={{
+          tabBarButton: () => null,
+        }} //não mostra ícone
+      />
+
+      <Screen
+        name="localization"
+        component={Localization}
+        options={{
+          tabBarStyle: { display: 'none' }, // Oculta completamente a tab bar
           tabBarButton: () => null,
         }} //não mostra ícone
       />

@@ -10,10 +10,11 @@ import { Feather, MaterialIcons } from '@expo/vector-icons'
 
 import { Input } from '@components/Input'
 import { Button } from '@components/Button'
-import { StackNavigatorRoutesProps } from '@routes/stack.routes'
+
 import { AppError } from '@utils/AppError'
 import { useAuth } from '@hooks/useAuth'
 import { api } from '@services/api'
+import { AppNavigatorRoutesProps } from '@routes/app.routes'
 
 type FormDataProps = {
   name: string
@@ -61,8 +62,10 @@ export function SignUp() {
   const scrollViewRef = useRef<ScrollView>(null)
 
   const toast = useToast()
-  const navigation = useNavigation<StackNavigatorRoutesProps>()
+
   const { signIn } = useAuth()
+  const { userId } = useAuth()
+  const navigation = useNavigation<AppNavigatorRoutesProps>()
 
   const {
     control,
@@ -74,6 +77,10 @@ export function SignUp() {
 
   function handleGoBack() {
     navigation.goBack()
+  }
+
+  function handleGoLocalization(userId: string) {
+    navigation.navigate('localization', { userId })
   }
 
   async function handleSignUp(data: FormDataProps) {
@@ -95,9 +102,23 @@ export function SignUp() {
         },
       })
 
-      await signIn(data.email, data.password)
+      const user = await signIn(data.email, data.password)
+
+      try {
+        const locationResponse = await api.get(`/users/${user.id}/location`)
+        const { latitude, longitude } = locationResponse.data
+
+        if (latitude && longitude) {
+          navigation.navigate('home', { userId })
+        } else {
+          navigation.navigate('localization', { userId: user.id })
+        }
+      } catch (err) {
+        // Se der erro, assume que a localização ainda não foi cadastrada
+        navigation.navigate('localization', { userId: user.id })
+      }
     } catch (error) {
-      console.log('Não cadastrado:', error)
+      console.log('Erro ao cadastrar usuário:', error)
       setIsLoading(false)
 
       const isAppError = error instanceof AppError
@@ -374,7 +395,7 @@ export function SignUp() {
           </VStack>
 
           <Button
-            title="Criar conta"
+            title="Próximo"
             mt={8}
             isLoading={isLoading}
             onPress={handleSubmit(handleSignUp)}

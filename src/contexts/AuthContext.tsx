@@ -20,7 +20,7 @@ export type AuthContextDataProps = {
   user: UserDTO
   userId: string
   isAdmin: boolean // <- Aqui
-  signIn: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<UserDTO>
   signOut: () => Promise<void>
   isLoadingUserStorageData: boolean
 }
@@ -71,12 +71,9 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
   }
 
   // Autenticação do usuário
-  async function signIn(email: string, password: string) {
+  async function signIn(email: string, password: string): Promise<UserDTO> {
     try {
-      console.log('[AuthContext] Fazendo login...')
-
       const { data } = await api.post('/sessions', { email, password })
-      // console.log('[AuthContext] Resposta da API:', data)
 
       if (data.user && data.accessToken && data.refreshToken) {
         await storageUserAndTokenSave(
@@ -85,13 +82,13 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
           data.refreshToken,
         )
         await userAndTokenUpdate(data.user, data.accessToken)
+
+        return data.user // <- Retorna o user aqui!
       } else {
-        console.log('[AuthContext] Dados inválidos retornados da API!')
-        //console.error('[AuthContext] Dados inválidos retornados da API!')
+        throw new Error('Dados inválidos retornados da API!')
       }
     } catch (error) {
       console.log('[AuthContext] Erro ao fazer login:', error)
-      // console.error('[AuthContext] Erro ao fazer login:', error)
       throw error
     } finally {
       setIsLoadingUserStorageData(false)

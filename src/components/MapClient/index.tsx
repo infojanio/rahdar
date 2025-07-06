@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react'
-
-import { View } from 'native-base'
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  Alert,
+} from 'react-native'
 import MapView, { Callout, LatLng, Marker, Region } from 'react-native-maps'
-import { Dimensions, StyleSheet, Text } from 'react-native'
-
 import * as Location from 'expo-location'
 
-const { width, height } = Dimensions.get('screen')
+import { api } from '@services/api'
 
 import { MapGoogleType } from '@components/MapGoogleType'
 import { MapCard } from '@components/MapCard'
@@ -18,22 +22,24 @@ import { InfoAdd } from '@components/InfoAdd'
 import database from '@components/NewMarker/database'
 
 import PhotoPng from '@assets/UserLocal.png'
-import MapType from 'src/descart/MapType'
+import { useAuth } from '@hooks/useAuth'
+import { AppNavigatorRoutesProps } from '@routes/app.routes'
+import { useNavigation } from '@react-navigation/native'
+
+const { width, height } = Dimensions.get('screen')
 
 export function MapClient() {
+  const { userId } = useAuth()
+  const navigation = useNavigation<AppNavigatorRoutesProps>()
+
   const [showMarkerSetter, setShowMarkerSetter] = useState(false)
   const [showAddress, setShowAddress] = useState(false)
-
   const [markerCoordinates, setMarkerCoordinates] = useState<LatLng>({
     latitude: 0,
     longitude: 0,
   })
-
   const [cardHeight, setCardHeight] = useState(0)
   const [showCard, setShowCard] = useState<'back' | 'mapType'>('back')
-
-  //const [showAddress, setShowAddress] = useState<'init' | 'mapAddress'>('init')
-
   const [mapType, setMapType] = useState<'standard' | 'satellite' | 'terrain'>(
     'standard',
   )
@@ -41,18 +47,12 @@ export function MapClient() {
   const markers = database.markers
   const mapRef = useRef<MapView>(null)
 
-  /*
-  useEffect(() => {
-    setTimeout(()=> {
-      handleNewMarker()
-      }, 5000)    
-  }, [])
-  */
+  function handleOpenHome(userId: string) {
+    navigation.navigate('home', { userId })
+  }
 
-  //Pede ao usuário permissão pra mostrar a localização atual
   const getMyLocation = async (): Promise<Region | undefined> => {
     let { status } = await Location.requestForegroundPermissionsAsync()
-
     if (status !== 'granted') return
 
     const { latitude, longitude } = (
@@ -64,56 +64,57 @@ export function MapClient() {
       latitudeDelta: 0.025,
       longitudeDelta: 0.025,
     }
-    console.log(
-      'Minha localização: ' + region?.latitude + ' e ' + region?.longitude,
-    )
     return region
   }
 
-  //direcionar o zoom para essa localização
   const goToMyLocation = async () => {
-    const region = await getMyLocation() //pega a localização do usuário
-    region && mapRef.current?.animateToRegion(region, 1000) //dá um zoom até o local do usuário
-
-    //console.log("Vou para o ponto: "+region?.latitude +" e "+ region?.longitude)
+    const region = await getMyLocation()
+    region && mapRef.current?.animateToRegion(region, 1000)
     return region
   }
 
-  //adiciona marcador no local
   const handleNewMarker = async () => {
     if (!showMarkerSetter) {
-      //se o botão adicionar não estiver habilitado
       const camera = await mapRef.current?.getCamera()
-      camera?.center && setMarkerCoordinates(camera?.center) //centraliza a tela
-    } else {
-      //salvar marcador
-      markers.push({
-        id: markers.length + 1,
-        color: 'green',
-        coordinates: markerCoordinates,
-      })
+      camera?.center && setMarkerCoordinates(camera?.center)
     }
-    setShowMarkerSetter((v) => !v) //
-    console.log('Incluí novo NewMarker')
-
-    setShowAddress((v) => !v) //  console.log("Incluí a caixa de endereço")
+    setShowMarkerSetter((v) => !v)
+    setShowAddress((v) => !v)
   }
 
-  //pega a altura da View
-  const handleLayoutChange = (event: LayoutChangeEvent) => {
+  const saveUserLocation = async () => {
+    if (!userId) {
+      Alert.alert('Erro', 'Usuário não identificado.')
+      return
+    }
+
+    try {
+      await api.post('/users/location', {
+        userId,
+        latitude: markerCoordinates.latitude,
+        longitude: markerCoordinates.longitude,
+      })
+      Alert.alert('Sucesso', 'Localização salva com sucesso!')
+
+      handleOpenHome(userId) //navega para home
+    } catch (error) {
+      console.log('Erro:', error)
+      Alert.alert('Erro', 'Não foi possível salvar a localização.')
+      console.error(error)
+    }
+  }
+
+  const handleLayoutChange = (event: any) => {
     const { height } = event.nativeEvent.layout
     setCardHeight(height)
   }
 
   return (
-    <View flex={1}>
+    <View>
       <MapView
         style={styles.map}
         ref={mapRef}
-        onMapReady={() => {
-          goToMyLocation()
-          console.log('carreguei o MapView')
-        }}
+        onMapReady={goToMyLocation}
         loadingEnabled
         showsUserLocation
         showsMyLocationButton={false}
@@ -127,7 +128,7 @@ export function MapClient() {
             coordinate={markerCoordinates}
             onDragEnd={(e) => setMarkerCoordinates(e.nativeEvent.coordinate)}
             isPreselected={true}
-            title={'Local de entrega'}
+            title={'Minha localização'}
           />
         )}
 
@@ -144,6 +145,15 @@ export function MapClient() {
           </Marker>
         ))}
       </MapView>
+
+      {showMarkerSetter && (
+        <TouchableOpacity
+          style={styles.confirmButton}
+          onPress={saveUserLocation}
+        >
+          <Text style={styles.confirmButtonText}>Confirmar Localização</Text>
+        </TouchableOpacity>
+      )}
 
       <LocationActual mBottom={cardHeight} onPress={goToMyLocation} />
 
@@ -164,11 +174,11 @@ export function MapClient() {
         <MapTypeCard
           handleLayoutChange={handleLayoutChange}
           closeModal={() => setShowCard('back')}
-          changeMapType={(mapType) => setMapType(mapType)}
+          changeMapType={(type) => setMapType(type)}
         />
       )}
 
-      {showAddress === false ? (
+      {!showAddress ? (
         <InfoAdd handleLayoutChange={handleLayoutChange} />
       ) : (
         <MapCard handleLayoutChange={handleLayoutChange} />
@@ -179,7 +189,23 @@ export function MapClient() {
 
 const styles = StyleSheet.create({
   map: {
-    width: width,
-    height: height,
+    width,
+    height,
+  },
+  confirmButton: {
+    position: 'absolute',
+    bottom: 100,
+    left: 40,
+    right: 40,
+    backgroundColor: '#047857', // green.700
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 5,
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 })

@@ -6,7 +6,11 @@ import LocationSvg from '@assets/location.svg'
 import { useNavigation } from '@react-navigation/native'
 import { StackNavigatorRoutesProps } from '@routes/stack.routes'
 
-export function MapCard() {
+type Props = {
+  handleLayoutChange: (event: any) => void
+}
+
+export function MapCard({ handleLayoutChange }: Props) {
   const navigation = useNavigation<StackNavigatorRoutesProps>()
 
   function handleGoBack() {
