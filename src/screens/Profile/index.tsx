@@ -91,6 +91,16 @@ export function Profile() {
             <Text style={styles.label}>Disponível</Text>
             <Text style={styles.value}>R$ {balance.toFixed(2)}</Text>
           </View>
+          <View>
+            <Text style={styles.label}>Recebido</Text>
+            <Text style={styles.valueReceived}>
+              +{totalReceived.toFixed(2)}
+            </Text>
+          </View>
+          <View>
+            <Text style={styles.label}>Usado</Text>
+            <Text style={styles.valueUsed}>-{totalUsed.toFixed(2)}</Text>
+          </View>
         </View>
 
         <View style={styles.actions}>
@@ -183,9 +193,19 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   value: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#16A34A',
+  },
+  valueReceived: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#16A34A',
+  },
+  valueUsed: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#EF4444',
   },
   valuePending: {
     fontSize: 20,

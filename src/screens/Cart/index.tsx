@@ -277,7 +277,7 @@ export function Cart() {
               isLoading={Object.values(isUpdating).some(Boolean)}
               isDisabled={cartItems.length === 0}
             >
-              Finalizar compra
+              Próximo
             </Button>
           </>
         )}

@@ -91,7 +91,7 @@ export function CashbackRegulationCard() {
               fontWeight: 'medium',
               textDecoration: 'none',
             }}
-            href="https://sualoja.com/regulamento-cashback"
+            href="https://iaki.com.br"
             isExternal
           >
             Depois troque por produtos.
