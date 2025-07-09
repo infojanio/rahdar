@@ -127,9 +127,14 @@ export function MapClient() {
             draggable
             coordinate={markerCoordinates}
             onDragEnd={(e) => setMarkerCoordinates(e.nativeEvent.coordinate)}
-            isPreselected={true}
-            title={'Minha localização'}
-          />
+            calloutAnchor={{ x: 0.5, y: 1.5 }} // move o balão mais pra cima
+          >
+            <Callout tooltip>
+              <View style={styles.calloutContainer}>
+                <Text style={styles.calloutText}>Pressione e Arraste</Text>
+              </View>
+            </Callout>
+          </Marker>
         )}
 
         {markers.map((marker) => (
@@ -140,7 +145,7 @@ export function MapClient() {
             image={PhotoPng}
           >
             <Callout>
-              <Text>Local de entrega</Text>
+              <Text>Minha Localização</Text>
             </Callout>
           </Marker>
         ))}
@@ -194,15 +199,29 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     position: 'absolute',
-    bottom: 100,
-    left: 40,
-    right: 40,
+    bottom: 80,
+    left: 80,
+    right: 80,
     backgroundColor: '#047857', // green.700
     padding: 12,
     borderRadius: 10,
     alignItems: 'center',
     elevation: 5,
   },
+  calloutContainer: {
+    backgroundColor: 'white',
+    paddingVertical: 1,
+    marginBottom: -4,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    elevation: 4,
+  },
+  calloutText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+
   confirmButtonText: {
     color: 'white',
     fontSize: 16,

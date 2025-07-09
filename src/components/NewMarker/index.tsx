@@ -1,7 +1,7 @@
 import { TouchableOpacity, StyleSheet } from 'react-native'
 import { View } from 'native-base'
 
-import { PlusSvg, CheckSvg } from '../../assets'
+import { PlusSvg, CloseSvg } from '../../assets'
 
 interface Props {
   mBottom: number
@@ -22,7 +22,7 @@ export function NewMarker({ mBottom, onPress, showMarkerSetter }: Props) {
         onPress={onPress}
         style={styles(null, showMarkerSetter).button}
       >
-        {showMarkerSetter ? <CheckSvg /> : <PlusSvg />}
+        {showMarkerSetter ? <CloseSvg /> : <PlusSvg />}
       </TouchableOpacity>
     </View>
   )
@@ -42,7 +42,7 @@ const styles = (mBottom?: number | null, showMarkerSetter?: boolean) =>
     button: {
       width: 35,
       height: 35,
-      backgroundColor: showMarkerSetter ? '#34d399' : '#f3f4f6',
+      backgroundColor: showMarkerSetter ? '#cfd8d8' : '#f3f4f6',
       borderRadius: 100,
       display: 'flex',
       alignItems: 'center',

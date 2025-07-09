@@ -1,22 +1,49 @@
+import { useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
-import { HStack, Center, Text, Button } from 'native-base'
-
-import LocationSvg from '@assets/location.svg'
-
+import { HStack, Text } from 'native-base'
 import { useNavigation } from '@react-navigation/native'
 import { StackNavigatorRoutesProps } from '@routes/stack.routes'
+import { api } from '@services/api'
+import LocationSvg from '@assets/location.svg'
+import { useAuth } from '@hooks/useAuth'
 
 type Props = {
   handleLayoutChange: (event: any) => void
 }
 
+type Address = {
+  street: string
+  city: string
+  state: string
+  postalCode: string
+}
+
 export function MapCard({ handleLayoutChange }: Props) {
   const navigation = useNavigation<StackNavigatorRoutesProps>()
+  const { userId } = useAuth()
+  const [address, setAddress] = useState<Address | null>(null)
 
-  function handleGoBack() {
-    navigation.goBack()
-    console.log('voltei')
-  }
+  // Busca endereço ao montar o componente
+  useEffect(() => {
+    async function fetchAddress() {
+      try {
+        const response = await api.get(`/users/${userId}/address`)
+        console.log(response.data)
+        if (response.data?.address) {
+          setAddress(response.data.address)
+        }
+      } catch (error) {
+        console.log('Erro ao buscar endereço:', error)
+        setAddress(null) // <- indica ausência de endereço
+      }
+    }
+
+    fetchAddress()
+  }, [userId])
+
+  const formattedAddress = address
+    ? `${address.street}\n${address.city} - ${address.state}`
+    : 'Não localizamos o endereço...'
 
   return (
     <HStack
@@ -28,43 +55,14 @@ export function MapCard({ handleLayoutChange }: Props) {
       marginTop={4}
       borderRadius={10}
       alignItems={'center'}
+      paddingX={4}
+      onLayout={handleLayoutChange}
     >
       <LocationSvg height={40} width={40} />
-      <Text justifyContent={'center'} fontSize={'13'}>
-        Endereço: {'\n'}Setor Aeroporto, Rua 5, Qd. 6, Lt. 1{'\n'}Campos Belos
+      <Text ml={3} fontSize={'13'}>
+        Endereço:{'\n'}
+        {formattedAddress}
       </Text>
     </HStack>
   )
 }
-/*
-export function MapCard ()  {
-  return (
-    <View style={styles.container}>
-            <Text>
-Campos Belos, Setor Aeroporto, Rua 5, Qd. 6, Lt. 1
-            </Text>
-    </View>
-  )
-}
-const styles  = StyleSheet.create({
-    container: {
-position: "absolute",
-width: "70%",
-height: "10%",
-marginLeft: 40,
-marginTop: 20,
-borderRadius: 20,
-paddingHorizontal: 20,
-alignItems: "center",
-justifyContent: "center",
-backgroundColor: "#fff"
-
-        
-    },
-    text: {
-        
-        alignItems: "center",
-        justifyContent: "center"
-    }
-})
-*/
