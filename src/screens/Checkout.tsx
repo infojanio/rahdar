@@ -89,31 +89,36 @@ export function Checkout() {
 
   useFocusEffect(
     useCallback(() => {
-      const fetchCashbackBalance = async () => {
+      const fetchData = async () => {
         try {
-          const response = await api.get('/users/balance')
-          setCashbackBalance(response.data.balance || 0)
+          const [balanceRes, ordersRes] = await Promise.all([
+            api.get('/users/balance'),
+            api.get('/orders/history', { params: { user_id: user.id } }),
+          ])
+
+          const balance = balanceRes.data.balance || 0
+          const userOrders = ordersRes.data.orders || []
+
+          setCashbackBalance(balance)
+          setOrders(userOrders)
+
+          const hasPendingCashbackOrder = userOrders.some(
+            (order: any) =>
+              order.status === 'PENDING' && order.use_cashback === true,
+          )
+
+          // Se houver pedido pendente com cashback, reseta estados locais
+          if (hasPendingCashbackOrder) {
+            setUseCashback(false)
+            setDiscountApplied(0)
+          }
         } catch (error) {
-          console.error('Erro ao buscar saldo de cashback:', error)
+          console.error('Erro ao carregar dados de saldo/pedidos:', error)
         }
       }
 
-      const fetchOrders = async () => {
-        try {
-          //  const response = await api.get('/orders')
-          const response = await api.get('/orders/history', {
-            params: { user_id: user.id },
-          })
-          console.log('Pedidos por usuário:', response.data)
-          setOrders(response.data.orders || [])
-        } catch (error) {
-          console.error('Erro ao buscar pedidos:', error)
-        }
-      }
-
-      fetchCashbackBalance()
-      fetchOrders()
-    }, []),
+      fetchData()
+    }, [user.id]),
   )
 
   useEffect(() => {

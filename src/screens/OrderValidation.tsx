@@ -209,18 +209,22 @@ export function OrderValidation() {
 
   const validateOrder = async (orderId: string) => {
     try {
-      await api.patch(`/orders/${orderId}/validate`)
+      const response = await api.patch(`/orders/${orderId}/validate`)
       toast.show({
-        description: 'Cashback aprovado com sucesso!',
+        description: response.data?.message || 'Cashback aprovado com sucesso!',
         bgColor: 'green.500',
         placement: 'top',
       })
       setPage(1)
       fetchOrders(1, true)
     } catch (error) {
-      console.error('Erro ao validar pedido:', error)
+      console.error('', error)
+
+      const message =
+        error?.response?.data?.message || 'Erro ao aprovar cashback'
+
       toast.show({
-        description: 'Erro ao aprovar cashback',
+        description: message,
         bgColor: 'red.500',
         placement: 'top',
       })
