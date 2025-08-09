@@ -64,7 +64,7 @@ export function ProductCard({ product, ...rest }: ProductCardProps) {
               fontSize="16"
               numberOfLines={2}
             >
-              R$ {product.price}
+              R$ {Number(product.price).toFixed(2)}
             </Text>
 
             <Box bg="green.500" rounded="md" pl="1" pr="1">

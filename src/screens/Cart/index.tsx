@@ -196,7 +196,7 @@ export function Cart() {
           <VStack>
             <Text bold>{item.name}</Text>
             <Text color="gray.500">
-              {item.quantity}x {formatCurrency(item.price)}
+              {item.quantity}x {formatCurrency(Number(item.price))}
             </Text>
 
             <Text

@@ -220,7 +220,7 @@ export function Checkout() {
         cashbackUsed: useCashback ? discountApplied : 0,
       })
     } catch (err) {
-      console.error('Erro ao confirmar pedido', err)
+      console.error('Aguarde o último pedido ser validado!', err)
       const error = err as any //corrigir msg erro de tipagem
       Alert.alert(
         'Erro',
@@ -230,6 +230,8 @@ export function Checkout() {
       setLoading(false)
     }
   }
+
+  const isCashbackButtonDisabled = cashbackBalance < 0 || hasPending
 
   return (
     <Box flex={1} bg="white" px={4} py={6}>
@@ -252,7 +254,7 @@ export function Checkout() {
             <VStack flex={1}>
               <Text fontWeight="semibold">{item.product.name}</Text>
               <Text color="gray.500">
-                {item.quantity}x {formatCurrency(item.product.price)}
+                {item.quantity}x {formatCurrency(Number(item.product.price))}
               </Text>
             </VStack>
             <Text fontWeight="bold">
@@ -290,15 +292,15 @@ export function Checkout() {
             colorScheme="green"
             onPress={handleApplyCashback}
             isLoading={applyingCashback}
-            isDisabled={cashbackBalance <= 0 || hasPending}
+            isDisabled={isCashbackButtonDisabled}
           >
             Usar cashback como desconto
           </Button>
         )}
 
         {hasPending && (
-          <Text fontSize="xs" color="red.500">
-            Aguarde a validação do último pedido para usar o saldo.
+          <Text fontSize="16" color="red.500">
+            Valide sua última compra na loja física.
           </Text>
         )}
       </VStack>
@@ -342,7 +344,9 @@ export function Checkout() {
           colorScheme="blue"
           isLoading={loading}
           onPress={handleConfirmOrder}
-          isDisabled={loading || cartItems.length === 0}
+          isDisabled={
+            loading || cartItems.length === 0 || isCashbackButtonDisabled // se cashback estiver indisponível
+          }
           rounded="xl"
         >
           Confirmar Pedido
