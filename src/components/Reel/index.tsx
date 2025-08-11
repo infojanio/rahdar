@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import {
   Dimensions,
   Pressable,
+  Text,
   SafeAreaView,
   StyleSheet,
   Linking,
@@ -26,8 +27,8 @@ type Reel = {
 
 const { width } = Dimensions.get('window')
 // ✅ Deixe o card ocupar quase a tela inteira (com folga de 24)
-const CARD_W = Math.min(210, width - 24)
-const CARD_H = 360
+const CARD_W = Math.min(180, width - 24)
+const CARD_H = 330
 const CARD_GAP = 14 // soma das margens laterais (12 + 2) do seu Pressable
 
 export function Reel() {
@@ -102,6 +103,7 @@ export function Reel() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Text style={styles.text}>Reels do Instagram</Text>
       <FlatList
         ref={listRef}
         data={reels}
@@ -166,6 +168,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 2,
+    marginBottom: 4,
+  },
+  text: {
+    marginTop: 2,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
     marginBottom: 4,
   },
   dot: {
