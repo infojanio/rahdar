@@ -20,6 +20,7 @@ import { ProductQuantity } from './Product/ProductQuantity'
 import { InstagramReelsCarousel } from './InstagramReelsCarousel'
 import { CashbackRegulationCard } from './CashbackRegulationCard'
 import { CartContext } from '@contexts/CartContext'
+import { Reel } from '@components/Reel'
 
 export function Home() {
   const { fetchCart } = useContext(CartContext)
@@ -88,7 +89,7 @@ export function Home() {
             {/* Aqui passamos produtos para os componentes */}
             <ProductCashback />
             <ProductQuantity />
-            <InstagramReelsCarousel />
+            <Reel />
             <CashbackRegulationCard />
           </VStack>
         </ScrollView>

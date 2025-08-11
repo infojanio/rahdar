@@ -11,14 +11,14 @@ import { FlatList } from 'react-native' // ✅ usa o RN puro p/ ref sem dor de c
 import type { FlatList as RNFlatList } from 'react-native'
 import { api } from '@services/api'
 
-type BannerDTO = {
+type ReelDTO = {
   id: string
   title: string
   image_url: string
   link?: string | null
 }
 
-type PromoBanner = {
+type Reel = {
   id: string
   imageUrl: string
   link?: string | null
@@ -26,31 +26,31 @@ type PromoBanner = {
 
 const { width } = Dimensions.get('window')
 // ✅ Deixe o card ocupar quase a tela inteira (com folga de 24)
-const CARD_W = Math.min(320, width - 24)
-const CARD_H = 120
+const CARD_W = Math.min(210, width - 24)
+const CARD_H = 360
 const CARD_GAP = 14 // soma das margens laterais (12 + 2) do seu Pressable
 
-export function Promotion() {
+export function Reel() {
   const toast = useToast()
-  const listRef = useRef<RNFlatList<PromoBanner>>(null)
+  const listRef = useRef<RNFlatList<Reel>>(null)
 
-  const [banners, setBanners] = useState<PromoBanner[]>([])
+  const [reels, setReels] = useState<Reel[]>([])
   const [loading, setLoading] = useState(true)
   const [activeIndex, setActiveIndex] = useState<number>(0)
 
-  async function fetchBanners() {
+  async function fetchReels() {
     try {
       setLoading(true)
-      const { data } = await api.get<BannerDTO[]>('/banners')
-      const mapped: PromoBanner[] = (data ?? []).map((b) => ({
+      const { data } = await api.get<ReelDTO[]>('/reels')
+      const mapped: Reel[] = (data ?? []).map((b) => ({
         id: b.id,
         imageUrl: b.image_url,
         link: b.link ?? undefined,
       }))
-      setBanners(mapped)
+      setReels(mapped)
     } catch {
       toast.show({
-        title: 'Não foi possível carregar os banners.',
+        title: 'Não foi possível carregar os reels.',
         placement: 'top',
       })
     } finally {
@@ -59,21 +59,21 @@ export function Promotion() {
   }
 
   useEffect(() => {
-    fetchBanners()
+    fetchReels()
   }, [])
 
   // ✅ Autoplay
   useEffect(() => {
-    if (banners.length <= 1) return
+    if (reels.length <= 1) return
     const timer = setInterval(() => {
       setActiveIndex((prev) => {
-        const next = (prev + 1) % banners.length
+        const next = (prev + 1) % reels.length
         listRef.current?.scrollToIndex({ index: next, animated: true })
         return next
       })
     }, 5000)
     return () => clearInterval(timer)
-  }, [banners.length])
+  }, [reels.length])
 
   function handlePress(link?: string | null) {
     if (!link) return
@@ -93,18 +93,18 @@ export function Promotion() {
   if (loading) {
     return (
       <Box alignItems="center" justifyContent="center" h={CARD_H}>
-        <Spinner accessibilityLabel="Carregando banners" />
+        <Spinner accessibilityLabel="Carregando reels" />
       </Box>
     )
   }
 
-  if (!banners.length) return null
+  if (!reels.length) return null
 
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
         ref={listRef}
-        data={banners}
+        data={reels}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -138,7 +138,7 @@ export function Promotion() {
           >
             <Image
               source={{ uri: item.imageUrl }}
-              alt="Banner promocional"
+              alt="Reel promocional"
               w={CARD_W}
               h={CARD_H}
               borderRadius="xl"
@@ -148,9 +148,9 @@ export function Promotion() {
         )}
       />
 
-      {banners.length > 1 ? (
+      {reels.length > 1 ? (
         <Box flexDirection="row" justifyContent="center" mt={2}>
-          {banners.map((_, i) => (
+          {reels.map((_, i) => (
             <View
               key={i}
               style={[styles.dot, { opacity: i === activeIndex ? 1 : 0.35 }]}
