@@ -21,6 +21,7 @@ import { InstagramReelsCarousel } from './InstagramReelsCarousel'
 import { CashbackRegulationCard } from './CashbackRegulationCard'
 import { CartContext } from '@contexts/CartContext'
 import { Reel } from '@components/Reel'
+import { CategoryList } from './CategoryList'
 
 export function Home() {
   const { fetchCart } = useContext(CartContext)
@@ -90,6 +91,7 @@ export function Home() {
             <ProductCashback />
             <ProductQuantity />
             <Reel />
+            <CategoryList />
             <CashbackRegulationCard />
           </VStack>
         </ScrollView>

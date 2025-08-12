@@ -60,7 +60,7 @@ type AppRoutes = {
   orderHistory: undefined //
   productDetails: { productId: string }
   productBySubCategory: { categoryId: string }
-  productsBySubCategory: { categoryId: string }
+  productsBySubCategory: { categoryId: string; subcategoryId?: string }
   category: undefined
   allProductsQuantity: undefined
   allProductsCashback: undefined

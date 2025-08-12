@@ -31,9 +31,9 @@ export function Category() {
   const navigation = useNavigation<AppNavigatorRoutesProps>()
   const toast = useToast()
 
-  function handleOpenSubCategories(categoryId: string) {
+  function handleOpenSubCategories(categoryId: string, subcategoryId?: string) {
     setSelectedCategoryId(categoryId)
-    navigation.navigate('productsBySubCategory', { categoryId })
+    navigation.navigate('productsBySubCategory', { categoryId, subcategoryId })
   }
 
   //listar as categorias

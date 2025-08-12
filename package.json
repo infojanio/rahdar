@@ -31,6 +31,7 @@
     "framer-motion": "^12.9.2",
     "install": "^0.13.0",
     "lodash.debounce": "^4.0.8",
+    "lucide-react-native": "^0.539.0",
     "moti": "^0.30.0",
     "native-base": "^3.4.28",
     "npm": "^9.2.0",

@@ -176,7 +176,7 @@ export function OrderHistory() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        mb={4}
+        mb={2}
         py={2}
       >
         <HStack space={1} mb={2}>

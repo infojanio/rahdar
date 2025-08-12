@@ -19,22 +19,22 @@ import { SubCategoryFilter } from '@components/Category/SubCategoryFilter'
 import { ProductCard } from '@components/Product/ProductCard'
 import { Loading } from '@components/Loading'
 import { HomeScreen } from '@components/HomeScreen'
-import { Category } from '@components/Category'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
 
 type RouteParams = {
   categoryId: string
+  subcategoryId?: string // <-- aceita opcional para já abrir filtrado
 }
 
 export function ProductsBySubCategory() {
   const toast = useToast()
   const route = useRoute()
-  const { categoryId } = route.params as RouteParams
+  const {
+    categoryId,
+    subcategoryId: initialSubcategoryId,
+  } = route.params as RouteParams
 
   const [subCategories, setSubCategories] = useState<SubCategoryDTO[]>([])
-
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(
     null,
   )
@@ -50,13 +50,26 @@ export function ProductsBySubCategory() {
 
   async function fetchSubCategories() {
     try {
-      const response = await api.get(`/subcategories/category`, {
-        params: { categoryId },
-      })
-      setSubCategories(response.data)
-      if (response.data.length > 0) {
-        setSelectedSubCategory(response.data[0].id)
-      }
+      const { data } = await api.get<SubCategoryDTO[]>(
+        '/subcategories/category',
+        {
+          params: { categoryId },
+        },
+      )
+
+      setSubCategories(data)
+
+      // define a subcategoria selecionada:
+      // 1) se veio pela rota e existe nessa categoria -> usa ela
+      // 2) senão, usa a primeira da lista
+      const existsFromRoute = initialSubcategoryId
+        ? data.some((s) => s.id === initialSubcategoryId)
+        : false
+
+      const nextSelected =
+        (existsFromRoute ? initialSubcategoryId : data[0]?.id) ?? null
+
+      setSelectedSubCategory(nextSelected)
     } catch (error) {
       toast.show({
         title: 'Erro ao carregar subcategorias.',
@@ -69,7 +82,7 @@ export function ProductsBySubCategory() {
   async function fetchProductsBySubCategory(subcategoryId: string) {
     try {
       setIsLoading(true)
-      const response = await api.get('/products/subcategory', {
+      const response = await api.get<ProductDTO[]>('/products/subcategory', {
         params: { subcategoryId },
       })
       setProducts(response.data)
@@ -82,16 +95,14 @@ export function ProductsBySubCategory() {
     }
   }
 
+  // 1) carrega subcategorias quando a categoria muda
   useEffect(() => {
     fetchSubCategories()
+    // limpa produtos enquanto decide a subcategoria selecionada
+    setProducts([])
   }, [categoryId])
 
-  useEffect(() => {
-    if (selectedCategory) {
-      fetchProductsBySubCategory(selectedCategory)
-    }
-  }, [selectedSubCategory])
-
+  // 2) sempre que a subcategoria selecionada mudar, busca os produtos
   useEffect(() => {
     if (selectedSubCategory) {
       fetchProductsBySubCategory(selectedSubCategory)
@@ -100,11 +111,9 @@ export function ProductsBySubCategory() {
 
   return (
     <VStack flex={1} bg="white" safeArea>
-      <HomeScreen
-        title="Produtos"
-        // onSearchChange={setSearch}
-      />
+      <HomeScreen title="Produtos" />
 
+      {/* Filtros de subcategorias (horizontal) */}
       <Box px={4} pt={4}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <HStack space={3}>
