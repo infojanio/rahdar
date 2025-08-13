@@ -1,17 +1,55 @@
-rootProject.name = 'icompras'
+rootProject.name = 'rahdar'
 
-apply from: new File(["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir).text.trim(), "../scripts/autolinking.gradle");
-useExpoModules()
+// 🛠️ Função para resolver o caminho com segurança
+def resolvePackagePath(String packageName) {
+  try {
+    def path = ["node", "--print", "require.resolve('${packageName}/package.json')"]
+      .execute(null, rootDir)
+      .text
+      .trim()
+    return new File(path).getParentFile()
+  } catch (Exception e) {
+    println("⚠️ Falha ao resolver o pacote: ${packageName}")
+    return null
+  }
+}
 
-apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json')"].execute(null, rootDir).text.trim(), "../native_modules.gradle");
-applyNativeModulesSettingsGradle(settings)
+// 📦 expo
+def expoPath = resolvePackagePath("expo")
+if (expoPath != null) {
+  def autolinkingGradle = new File(expoPath, "../scripts/autolinking.gradle")
+  if (autolinkingGradle.exists()) {
+    apply from: autolinkingGradle
+    useExpoModules()
+  }
+}
+
+// 📦 @react-native-community/cli-platform-android
+def cliPlatformAndroid = resolvePackagePath("@react-native-community/cli-platform-android")
+if (cliPlatformAndroid != null) {
+  def nativeModulesGradle = new File(cliPlatformAndroid, "../native_modules.gradle")
+  if (nativeModulesGradle.exists()) {
+    apply from: nativeModulesGradle
+    applyNativeModulesSettingsGradle(settings)
+  }
+}
 
 include ':app'
-includeBuild(new File(["node", "--print", "require.resolve('react-native-gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile())
 
+// 📦 react-native-gradle-plugin
+def rnGradlePlugin = resolvePackagePath("react-native-gradle-plugin")
+if (rnGradlePlugin != null) {
+  includeBuild(rnGradlePlugin)
+}
+
+// 📦 Hermes e arquitetura nova
 if (settings.hasProperty("newArchEnabled") && settings.newArchEnabled == "true") {
-  include(":ReactAndroid")
-  project(":ReactAndroid").projectDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../ReactAndroid");
-  include(":ReactAndroid:hermes-engine")
-  project(":ReactAndroid:hermes-engine").projectDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../ReactAndroid/hermes-engine");
+  def reactNativePath = resolvePackagePath("react-native")
+  if (reactNativePath != null) {
+    include(":ReactAndroid")
+    project(":ReactAndroid").projectDir = new File(reactNativePath, "../ReactAndroid")
+
+    include(":ReactAndroid:hermes-engine")
+    project(":ReactAndroid:hermes-engine").projectDir = new File(reactNativePath, "../ReactAndroid/hermes-engine")
+  }
 }

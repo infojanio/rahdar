@@ -34,7 +34,7 @@ export function HomeHeader() {
 
   return (
     <Box
-      bg={'gray.200'}
+      bg={'green.300'}
       px={4}
       ml={1.5}
       mr={0.5}
