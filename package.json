@@ -58,6 +58,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@react-native-community/cli-platform-android": "^20.0.0",
     "@types/react": "~18.3.12",
     "@types/react-native": "~0.70.6",
     "@types/react-native-extra-dimensions-android": "^1.2.3",

@@ -17,7 +17,7 @@ export function CategoryCard({ data, isSelected = false, ...rest }: Props) {
       <TouchableOpacity {...rest}>
         <Box
           bg="gray.200"
-          size={24}
+          size={20}
           marginBottom={1}
           backgroundColor="gray.100"
           alignItems="center"
@@ -25,10 +25,10 @@ export function CategoryCard({ data, isSelected = false, ...rest }: Props) {
           marginLeft={1}
           marginRight={1}
           borderWidth={0.8}
-          borderColor={'gray.200'}
+          borderColor={'gray.300'}
           pb={1}
           pt={1}
-          borderRadius={32}
+          borderRadius={12}
           minH={'16'}
         >
           <Image

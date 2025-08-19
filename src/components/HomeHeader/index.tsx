@@ -34,7 +34,7 @@ export function HomeHeader() {
 
   return (
     <Box
-      bg={'green.300'}
+      bg={'green.500'}
       px={4}
       ml={1.5}
       mr={0.5}
@@ -48,7 +48,7 @@ export function HomeHeader() {
         <VStack>
           <Text
             fontSize="md"
-            color="gray.800"
+            color="white"
             fontWeight="medium"
             opacity={0.9}
           >
@@ -56,7 +56,7 @@ export function HomeHeader() {
           </Text>
           <Text
             fontSize="14"
-            color="gray.800"
+            color="white"
             fontWeight="normal"
             numberOfLines={1}
             maxW="180"
@@ -71,48 +71,45 @@ export function HomeHeader() {
             alignItems="center"
             px={2}
             py={1}
-            borderRadius={'2xl'}
-            borderColor={'gray.700'}
+            borderRadius={'lg'}
+            borderColor={'gray.100'}
             borderWidth={'0.3'}
           >
             <Icon
               as={<MaterialIcons name="logout" />}
               size={5}
-              color="black"
+              color="white"
               mr={1}
               opacity={0.9}
             />
-            <Text color="black" fontSize="sm" opacity={0.9}>
+            <Text color="white" fontSize="sm" opacity={0.9}>
               Sair
             </Text>
           </HStack>
         </TouchableOpacity>
       </HStack>
 
+      <Box ml={-4} mr={-4} flex={1} borderBottomColor={'gray.100'} borderBottomWidth={2} ></Box>
+
       {/* Segunda Linha - Saldo e Logo */}
       <HStack justifyContent="space-between" alignItems="flex-end">
-        <Box mt={1} flex={1}>
+        <Center >
           <Saldo />
-        </Box>
+        </Center>
 
         <HStack>
-          <Box borderRadius="2xl" p={2}>
-            <Text
-              color="yellow.50"
-              fontSize="16"
-              opacity={0.9}
-              fontStyle={'italic'}
-            ></Text>
+          <Box borderRadius="3xl" >
 
+            <Center mb={4} >
             <Image
               alt="Logo"
               source={MarketPng}
-              h={10}
-              w={140}
-              borderBottomWidth={'1.4'}
-              borderColor={'yellow.100'}
+              h={8}
+              w={130}           
               resizeMode="contain"
             />
+
+            </Center>
           </Box>
         </HStack>
       </HStack>
