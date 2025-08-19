@@ -1,6 +1,6 @@
 {
   "name": "rahdar",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.js",
   "scripts": {
     "start": "expo start --dev-client",
@@ -58,6 +58,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@react-native-community/cli": "^20.0.0",
+    "@react-native-community/cli-platform-android": "^12.3.7",
     "@types/react": "~18.3.12",
     "@types/react-native": "~0.70.6",
     "@types/react-native-extra-dimensions-android": "^1.2.3",

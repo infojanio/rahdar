@@ -78,7 +78,8 @@ export function SignIn() {
       if (response?.data?.latitude && response?.data?.longitude) {
         navigationApp.navigate('home', { userId: user.id }) // Já tem localização, vai para Home
       } else {
-        navigationApp.navigate('localization', { userId: user.id }) // Redireciona para Location
+        navigationApp.navigate('home', { userId: user.id })
+        //avigationApp.navigate('localization', { userId: user.id }) // Redireciona para Location
       }
     } catch (error) {
       const isAppError = error instanceof AppError

@@ -23,13 +23,15 @@ export function Redirect() {
         } else {
           navigation.reset({
             index: 0,
-            routes: [{ name: 'localization', params: { userId: user.id } }],
+            routes: [{ name: 'home', params: { userId: user.id } }],
+            // routes: [{ name: 'localization', params: { userId: user.id } }],
           })
         }
       } catch (error) {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'localization', params: { userId: user.id } }],
+          routes: [{ name: 'home', params: { userId: user.id } }],
+          //routes: [{ name: 'localization', params: { userId: user.id } }],
         })
       }
     }

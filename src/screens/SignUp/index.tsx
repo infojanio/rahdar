@@ -111,11 +111,13 @@ export function SignUp() {
         if (latitude && longitude) {
           navigation.navigate('home', { userId })
         } else {
-          navigation.navigate('localization', { userId: user.id })
+          navigation.navigate('home', { userId })
+          //  navigation.navigate('localization', { userId: user.id })
         }
       } catch (err) {
+        navigation.navigate('home', { userId })
         // Se der erro, assume que a localização ainda não foi cadastrada
-        navigation.navigate('localization', { userId: user.id })
+        // navigation.navigate('localization', { userId: user.id })
       }
     } catch (error) {
       console.log('Erro ao cadastrar usuário:', error)
