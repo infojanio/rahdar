@@ -64,7 +64,7 @@ export function Saldo() {
 
   return (
     <VStack mt={2} px={1}>
-      <Text fontSize="16" color="white" mb={1}>
+      <Text fontSize="14" color="white" fontWeight="normal" mb={1}>
         Saldo disponível
       </Text>
 
@@ -77,7 +77,7 @@ export function Saldo() {
               ? balance !== null
                 ? formatBalance(balance)
                 : 'R$ 0,00'
-              : '••••••'}
+              : '•••••••••'}
           </Text>
         )}
 
@@ -87,7 +87,7 @@ export function Saldo() {
               as={MaterialIcons}
               name={showBalance ? 'visibility-off' : 'visibility'}
               color="white"
-              size={6}
+              size={5}
             />
           }
           onPress={() => setShowBalance((prev) => !prev)}

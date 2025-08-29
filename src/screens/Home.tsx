@@ -15,13 +15,13 @@ import { Category } from '@components/Category'
 import { Promotion } from '@components/Promotion'
 import { Loading } from '@components/Loading'
 
-import { ProductCashback } from './Product/ProductCashback'
-import { ProductQuantity } from './Product/ProductQuantity'
 import { InstagramReelsCarousel } from './InstagramReelsCarousel'
 import { CashbackRegulationCard } from './CashbackRegulationCard'
 import { CartContext } from '@contexts/CartContext'
 import { Reel } from '@components/Reel'
 import { CategoryList } from './CategoryList'
+import { ProductCashback } from './Product/ProductCashback'
+import { ProductQuantity } from './Product/ProductQuantity'
 
 export function Home() {
   const { fetchCart } = useContext(CartContext)

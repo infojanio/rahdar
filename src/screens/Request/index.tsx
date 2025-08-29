@@ -1,47 +1,43 @@
-import { useState } from 'react'
+// src/screens/Redirect.tsx
+import { useEffect } from 'react'
+import { useNavigation } from '@react-navigation/native'
+import { useAuth } from '@hooks/useAuth'
+import { api } from '@services/api'
+import { AppNavigatorRoutesProps } from '@routes/app.routes'
+import { Loading } from '@components/Loading'
 
-import { HomeScreen } from '@components/HomeScreen'
-import { Status } from '@components/Status'
-import { Heading, VStack, SectionList, Text, Center } from 'native-base'
+export function Redirect() {
+  const { user } = useAuth()
+  const navigation = useNavigation<AppNavigatorRoutesProps>()
 
-export function Request() {
-  const [request, setRequest] = useState([
-    {
-      title: '24.02.2023',
-      data: ['Pedido Realizado', 'Pedido em Separação', 'Pedido em Entrega'],
-    },
-    {
-      title: '25.02.2023',
-      data: ['Pedido Realizado', 'Pedido em Separação', 'Pedido em Entrega'],
-    },
-  ])
+  useEffect(() => {
+    async function checkLocation() {
+      try {
+        const response = await api.get(`/users/${user.id}/location`)
 
-  return (
-    <VStack bg={'gray.200'} flex="1">
-      <HomeScreen title="Histórico de Pedidos" />
-
-      <SectionList
-        sections={request}
-        keyExtractor={(item) => item}
-        renderItem={({ item }) => <Status />}
-        renderSectionHeader={({ section }) => (
-          <Heading mt={2} mb={2} ml="2" fontSize="lg" color="red.700">
-            {section.title}
-          </Heading>
-        )}
-        px={2}
-        contentContainerStyle={
-          request.length === 0 && { flex: 1, justifyContent: 'center' }
+        if (response.data?.latitude && response.data?.longitude) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'home', params: { userId: user.id } }],
+          })
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'home', params: { userId: user.id } }],
+            // routes: [{ name: 'localization', params: { userId: user.id } }],
+          })
         }
-        ListEmptyComponent={() => (
-          <Center flex="1">
-            <Text color="red.600" fontSize="lg">
-              Nenhum pedido registrado!
-            </Text>
-          </Center>
-        )}
-        showsVerticalScrollIndicator={false}
-      />
-    </VStack>
-  )
+      } catch (error) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'home', params: { userId: user.id } }],
+          // routes: [{ name: 'localization', params: { userId: user.id } }],
+        })
+      }
+    }
+
+    checkLocation()
+  }, [])
+
+  return <Loading />
 }

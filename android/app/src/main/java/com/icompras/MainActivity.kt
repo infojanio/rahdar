@@ -1,4 +1,4 @@
-package com.icompras
+package com.iaki.rahdar
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

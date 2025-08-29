@@ -15,11 +15,11 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "bundleIdentifier": "com.icompras",
+      "bundleIdentifier": "com.iaki.rahdar",
       "buildNumber": "1"
     },
     "android": {
-      "package": "com.icompras",
+      "package": "com.iaki.rahdar",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",

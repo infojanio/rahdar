@@ -19,13 +19,11 @@ import { Cart } from '@screens/Cart'
 import { Checkout } from '@screens/Checkout'
 
 import { Profile } from '@screens/Profile'
-import { ProductList } from '@screens/Product/ProductList'
+
 import { ProductDetails } from '@screens/ProductDetails'
 
-import { ProductBySubCategory } from '@screens/Product/ProductBySubCategory'
-
 import { Category } from '@components/Category'
-import { ProductsBySubCategory } from '@screens/Product/ProductsBySubCategory'
+
 import { OrderConfirmation } from '@screens/OrderConfirmation'
 import { StorageCartProps } from '@storage/storageCart'
 import { OrderHistory } from '@screens/OrderHistory'
@@ -38,6 +36,9 @@ import { CartTabIcon } from '@components/CartTabIcon.tsx'
 
 import { useAuth } from '@hooks/useAuth'
 import { Redirect } from '@screens/Redirect'
+import { ProductList } from '@screens/Product/ProductList'
+import { ProductBySubCategory } from '@screens/Product/ProductBySubCategory'
+import { ProductsBySubCategory } from '@screens/Product/ProductsBySubCategory'
 
 type AppRoutes = {
   home: { userId: string }
@@ -75,7 +76,7 @@ const { Navigator, Screen } = createBottomTabNavigator<AppRoutes>()
 export function AppRoutes() {
   //definição do tamanho dos ícones
   const { sizes, colors } = useTheme()
-  const iconSize = sizes[6]
+  const iconSize = sizes[5]
 
   const { isAdmin } = useAuth()
 
@@ -94,9 +95,9 @@ export function AppRoutes() {
         tabBarStyle: {
           backgroundColor: colors.gray[100],
           borderTopWidth: 1,
-          height: Platform.OS === 'android' ? 'auto' : 70, // ajuste para dar espaço à label
-          paddingBottom: sizes[4],
-          paddingTop: sizes[2],
+          height: Platform.OS === 'android' ? 'auto' : 55, // ajuste para dar espaço à label
+          paddingBottom: sizes[2],
+          paddingTop: sizes[1],
         },
       }}
     >

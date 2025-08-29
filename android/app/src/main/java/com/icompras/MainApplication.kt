@@ -1,4 +1,4 @@
-package com.icompras
+package com.iaki.rahdar
 
 import android.app.Application
 import android.content.res.Configuration

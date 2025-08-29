@@ -12,7 +12,7 @@ import {
   Divider,
 } from 'native-base'
 import { MaterialIcons } from '@expo/vector-icons'
-import MarketPng from '@assets/rahdar.png'
+import MarketPng from '@assets/rahdar_white.png'
 import { useAuth } from '@hooks/useAuth'
 import { Saldo } from './Saldo'
 import { useCart } from '@hooks/useCart'
@@ -34,7 +34,7 @@ export function HomeHeader() {
 
   return (
     <Box
-      bg={'red.500'}
+      bg={'green.600'}
       px={4}
       ml={1.5}
       mr={0.5}
@@ -52,7 +52,7 @@ export function HomeHeader() {
           <Text
             fontSize="14"
             color="white"
-            fontWeight="normal"
+            fontWeight="bold"
             numberOfLines={1}
             maxW="180"
             textTransform="capitalize"
@@ -66,51 +66,54 @@ export function HomeHeader() {
             alignItems="center"
             px={2}
             py={1}
-            borderRadius={'2xl'}
-            borderColor={'gray.700'}
-            borderWidth={'0.3'}
+            mt={4}
+            borderRadius={'lg'}
+            borderColor={'gray.100'}
           >
             <Icon
               as={<MaterialIcons name="logout" />}
-              size={5}
+              size={6}
               color="white"
               mr={1}
               opacity={0.9}
             />
-            <Text color="white" fontSize="sm" opacity={0.9}>
+            <Text color="white" fontSize="sm" fontWeight={'bold'} opacity={0.9}>
               Sair
             </Text>
           </HStack>
         </TouchableOpacity>
       </HStack>
 
+      <Box
+        ml={-4}
+        mr={-4}
+        flex={1}
+        borderBottomColor={'gray.100'}
+        borderBottomWidth={2}
+      ></Box>
+
       {/* Segunda Linha - Saldo e Logo */}
-      <HStack justifyContent="space-between" alignItems="flex-end">
+      <HStack
+        justifyContent="space-between"
+        alignItems="flex-end"
+        borderRadius={'lg'}
+        borderColor={'gray.50'}
+        bg={'green.600'}
+        ml={-4}
+        mr={-4}
+      >
         <Center>
           <Saldo />
         </Center>
 
         <HStack>
-          <Box borderRadius="2xl" p={2}>
-            <Text
-              color="yellow.50"
-              fontSize="16"
-              opacity={0.9}
-              fontStyle={'italic'}
-            ></Text>
-            <Center
-              mt={4}
-              ml={10}
-              borderWidth={0.2}
-              borderRadius={'2xl'}
-              mb={2}
-              bg={'red.300'}
-            >
+          <Box borderRadius="3xl">
+            <Center mb={4} mr={4}>
               <Image
                 alt="Logo"
                 source={MarketPng}
-                h={10}
-                w={120}
+                h={8}
+                w={130}
                 resizeMode="contain"
               />
             </Center>

@@ -28,7 +28,7 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="com.icompras"/>
+        <data android:scheme="com.iaki.rahdar"/>
       </intent-filter>
     </activity>
   </application>
