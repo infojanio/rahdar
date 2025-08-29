@@ -1,6 +1,6 @@
 import { Platform } from 'react-native'
 import { useTheme } from 'native-base'
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context' // 👈
 import {
   createBottomTabNavigator,
   BottomTabNavigationProp,
@@ -80,6 +80,8 @@ export function AppRoutes() {
 
   const { isAdmin } = useAuth()
 
+  const insets = useSafeAreaInsets() // 👈
+
   return (
     <Navigator
       initialRouteName="redirect"
@@ -95,9 +97,11 @@ export function AppRoutes() {
         tabBarStyle: {
           backgroundColor: colors.gray[100],
           borderTopWidth: 1,
-          height: Platform.OS === 'android' ? 'auto' : 55, // ajuste para dar espaço à label
-          paddingBottom: sizes[2],
-          paddingTop: sizes[1],
+          // Altura e padding que respeitam a área segura inferior
+          height:
+            Platform.OS === 'android' ? 52 + insets.bottom : 55 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, sizes[2]),
+          paddingTop: sizes[2],
         },
       }}
     >

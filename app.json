@@ -5,6 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",
+    "androidStatusBar": {
+      "translucent": false,
+      "backgroundColor": "#FFFFFF",
+      "barStyle": "dark-content"
+    },
     "splash": {
       "image": "./src/assets/splash.png",
       "resizeMode": "contain",
