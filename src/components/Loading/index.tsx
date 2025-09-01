@@ -1,15 +1,15 @@
 import { Center, Spinner, Image, Text } from 'native-base'
 
-import SplashImg from '@assets/fundo.png'
+import SplashImg from '@assets/icon01.png'
 
 export function Loading() {
   return (
     <Center flex={1} bg="gray.100">
       <Image
-        size={70}
+        size={50}
         source={SplashImg}
         defaultSource={SplashImg}
-        alt="Pessoa comprando online"
+        alt="loading..."
         resizeMode="contain"
         position="relative"
       />

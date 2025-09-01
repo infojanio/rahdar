@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Box,
   Text,
@@ -30,13 +30,11 @@ interface Product {
   image: string | null
   cashback_percentage: number
 }
-
 interface OrderItem {
   id: string
   quantity: number
   product: Product
 }
-
 interface Order {
   id: string
   userId: string
@@ -54,14 +52,15 @@ const DEFAULT_PRODUCT_IMAGE = 'https://via.placeholder.com/80'
 const STATUS_OPTIONS = [
   { value: 'PENDING', label: 'Pendente' },
   { value: 'VALIDATED', label: 'Aprovado' },
-  { value: 'EXPIRED', label: 'Recusado' },
+  // { value: 'EXPIRED', label: 'Recusado' },
+  { value: 'EXPIRED', label: 'Cancelado' }, // 👈 novo (caso seu backend use esse status)
 ]
 const PAGE_SIZE = 8
 
 export function OrderValidation() {
   const [orders, setOrders] = useState<Order[]>([])
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string>('PENDING')
   const [searchId, setSearchId] = useState('')
@@ -71,8 +70,13 @@ export function OrderValidation() {
   const toast = useToast()
 
   const { isOpen, onOpen, onClose } = useDisclose()
+  const cancelRef = useRef(null)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
-  const cancelRef = React.useRef(null)
+
+  // 'validate' | 'cancel'
+  const [dialogAction, setDialogAction] = useState<'validate' | 'cancel'>(
+    'validate',
+  )
 
   const fetchOrders = useCallback(
     async (pageNumber = 1, reset = false) => {
@@ -85,10 +89,7 @@ export function OrderValidation() {
         }
 
         const response = await api.get('/orders', {
-          params: {
-            page: pageNumber,
-            status: selectedStatus,
-          },
+          params: { page: pageNumber, status: selectedStatus },
         })
 
         const newOrders = (response.data.orders || []).map((order: any) => ({
@@ -139,7 +140,10 @@ export function OrderValidation() {
         })
         return []
       } finally {
-        if (reset) setLoading(false)
+        if (reset) {
+          setLoading(false)
+          setHasLoaded(true)
+        }
         setLoadingMore(false)
         setRefreshing(false)
       }
@@ -158,29 +162,30 @@ export function OrderValidation() {
   useFocusEffect(
     useCallback(() => {
       setPage(1)
+      setHasLoaded(false)
       fetchOrders(1, true)
     }, [fetchOrders]),
   )
 
   useEffect(() => {
     setPage(1)
+    setHasLoaded(false)
     fetchOrders(1, true)
   }, [selectedStatus, searchId, fetchOrders])
 
-  useEffect(() => {
-    let result = [...orders]
+  const filteredOrders = useMemo(() => {
+    let result = orders
     if (searchId.trim() !== '') {
       const searchTerm = searchId.trim().toLowerCase()
-      result = result.filter((order) =>
-        order.id.toLowerCase().includes(searchTerm),
-      )
+      result = result.filter((o) => o.id.toLowerCase().includes(searchTerm))
     }
-    setFilteredOrders(result)
-  }, [searchId, orders])
+    return result
+  }, [orders, searchId])
 
   const handleRefresh = async () => {
     setRefreshing(true)
     setPage(1)
+    setHasLoaded(false)
     await fetchOrders(1, true)
   }
 
@@ -216,18 +221,32 @@ export function OrderValidation() {
         placement: 'top',
       })
       setPage(1)
+      setHasLoaded(false)
       fetchOrders(1, true)
     } catch (error) {
-      console.error('', error)
-
       const message =
-        error?.response?.data?.message || 'Erro ao aprovar cashback'
+        (error as any)?.response?.data?.message || 'Erro ao aprovar cashback'
+      toast.show({ description: message, bgColor: 'red.500', placement: 'top' })
+    }
+  }
 
+  // 👇 NOVO: cancelar pedido
+  const cancelOrder = async (orderId: string) => {
+    try {
+      // Ajuste a rota se no seu backend for diferente (ex: /orders/:id/expire)
+      const response = await api.patch(`/orders/${orderId}/cancel`)
       toast.show({
-        description: message,
+        description: response?.data?.message || 'Pedido cancelado com sucesso!',
         bgColor: 'red.500',
         placement: 'top',
       })
+      setPage(1)
+      setHasLoaded(false)
+      fetchOrders(1, true)
+    } catch (error) {
+      const message =
+        (error as any)?.response?.data?.message || 'Erro ao cancelar pedido'
+      toast.show({ description: message, bgColor: 'red.500', placement: 'top' })
     }
   }
 
@@ -239,7 +258,6 @@ export function OrderValidation() {
         </Center>
       )
     }
-
     if (!hasMore && orders.length > 0) {
       return (
         <Center my={4}>
@@ -247,11 +265,10 @@ export function OrderValidation() {
         </Center>
       )
     }
-
     return null
   }
 
-  if (loading) {
+  if (loading || !hasLoaded) {
     return (
       <Box flex={1} justifyContent="center" alignItems="center">
         <Spinner size="lg" />
@@ -264,7 +281,7 @@ export function OrderValidation() {
       <HomeScreen title="Validação de Pedidos" />
 
       <Box px={4} py={2}>
-        <HStack bg={'gray.50'}>
+        <HStack bg="gray.50">
           <Box flex={1} ml={2} mt={2}>
             <Input
               placeholder="Buscar por ID (ex: ABC123)"
@@ -272,8 +289,7 @@ export function OrderValidation() {
               onChangeText={setSearchId}
             />
           </Box>
-
-          <Box mr={1} ml={1} mt={1} alignItems={'center'}>
+          <Box mr={1} ml={1} mt={1} alignItems="center">
             <Button onPress={() => setSearchId('')} variant="outline">
               Limpar
             </Button>
@@ -324,17 +340,18 @@ export function OrderValidation() {
           keyExtractor={(item) => `order-${item.id}`}
           renderItem={({ item }) => {
             const usedCashback = (item.discountApplied ?? 0) > 0
+            const isPending = item.status === 'PENDING'
 
             return (
               <Box mb={4} mx={4} bg="white" p={4} borderRadius="md" shadow={1}>
                 <Box mb={2}>
                   <Text fontWeight="normal">Cliente: {item.user_name}</Text>
                 </Box>
+
                 <HStack justifyContent="space-between" mb={2}>
                   <Text fontWeight="bold">
                     Pedido #{item.id.substring(0, 8)}
                   </Text>
-
                   <Badge colorScheme={getStatusColor(item.status)}>
                     {STATUS_OPTIONS.find((o) => o.value === item.status)
                       ?.label || item.status}
@@ -380,7 +397,7 @@ export function OrderValidation() {
                             {orderItem.quantity}x{' '}
                             {formatCurrency(orderItem.product.price)}
                           </Text>
-                          {(item.discountApplied ?? 0) === 0 && (
+                          {!usedCashback && (
                             <Text color="green.600">
                               {orderItem.product.cashback_percentage}% cashback
                             </Text>
@@ -392,19 +409,19 @@ export function OrderValidation() {
                 </VStack>
 
                 <Divider my={2} />
-                <VStack space={2}>
+                <VStack space={2} mb={3}>
                   <HStack justifyContent="space-between">
                     <Text fontWeight="bold">Total a pagar:</Text>
                     <Text>{formatCurrency(item.totalAmount)}</Text>
                   </HStack>
 
-                  {item.discountApplied && item.discountApplied > 0 ? (
+                  {usedCashback ? (
                     <HStack justifyContent="space-between">
                       <Text fontWeight="bold" color="orange.600">
                         Desconto aplicado:
                       </Text>
                       <Text color="orange.600">
-                        -{formatCurrency(item.discountApplied)} (
+                        -{formatCurrency(item.discountApplied!)} (
                         {Math.round(
                           ((item.discountApplied ?? 0) /
                             (item.totalAmount + (item.discountApplied ?? 0))) *
@@ -423,17 +440,35 @@ export function OrderValidation() {
                   )}
                 </VStack>
 
-                {item.status === 'PENDING' && (
-                  <Button
-                    onPress={() => {
-                      setSelectedOrderId(item.id)
-                      onOpen()
-                    }}
-                    bg="green.600"
-                    _pressed={{ bg: 'green.700' }}
-                  >
-                    Validar Cashback
-                  </Button>
+                {isPending && (
+                  <HStack space={3}>
+                    <Button
+                      flex={1}
+                      onPress={() => {
+                        setSelectedOrderId(item.id)
+                        setDialogAction('validate')
+                        onOpen()
+                      }}
+                      bg="green.600"
+                      _pressed={{ bg: 'green.700' }}
+                    >
+                      Validar Cashback
+                    </Button>
+
+                    <Button
+                      flex={1}
+                      onPress={() => {
+                        setSelectedOrderId(item.id)
+                        setDialogAction('cancel')
+                        onOpen()
+                      }}
+                      bg="red.600"
+                      _pressed={{ bg: 'red.700' }}
+                      variant="solid"
+                    >
+                      Cancelar Pedido
+                    </Button>
+                  </HStack>
                 )}
               </Box>
             )
@@ -447,6 +482,7 @@ export function OrderValidation() {
         />
       )}
 
+      {/* Dialog compartilhado para validar/cancelar */}
       <AlertDialog
         leastDestructiveRef={cancelRef}
         isOpen={isOpen}
@@ -454,28 +490,37 @@ export function OrderValidation() {
       >
         <AlertDialog.Content>
           <AlertDialog.CloseButton />
-          <AlertDialog.Header>Confirmação</AlertDialog.Header>
+          <AlertDialog.Header>
+            {dialogAction === 'validate'
+              ? 'Confirmar Validação'
+              : 'Confirmar Cancelamento'}
+          </AlertDialog.Header>
           <AlertDialog.Body>
-            Tem certeza que deseja validar?{' '}
+            {dialogAction === 'validate'
+              ? 'Tem certeza que deseja validar este pedido? '
+              : 'Tem certeza que deseja cancelar este pedido? '}
             <Text fontWeight="bold">
               Pedido: #{selectedOrderId?.substring(0, 8)}
             </Text>
           </AlertDialog.Body>
           <AlertDialog.Footer>
             <Button ref={cancelRef} onPress={onClose} variant="ghost">
-              Cancelar
+              Voltar
             </Button>
             <Button
-              colorScheme="green"
+              colorScheme={dialogAction === 'validate' ? 'green' : 'red'}
               onPress={async () => {
-                if (selectedOrderId) {
+                if (!selectedOrderId) return
+                if (dialogAction === 'validate') {
                   await validateOrder(selectedOrderId)
-                  onClose()
+                } else {
+                  await cancelOrder(selectedOrderId)
                 }
+                onClose()
               }}
               ml={3}
             >
-              Validar
+              {dialogAction === 'validate' ? 'Validar' : 'Cancelar Pedido'}
             </Button>
           </AlertDialog.Footer>
         </AlertDialog.Content>

@@ -12,10 +12,24 @@ import { HomeScreen } from '@components/HomeScreen'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
 import debounce from 'lodash.debounce'
 
-// 🔤 Função para remover acentos
-const removeAccents = (str: string) => {
-  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-}
+// remove acentos
+const removeAccents = (str: string) =>
+  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+const INITIAL_SUGGESTIONS = 5
+const PAGE_SIZE = 10
+
+// gera id fallback estável
+const makeTmpId = (seed: string, page: number, idx: number) =>
+  `tmp-${page}-${idx}-${(seed || 'x').slice(0, 6)}`
+
+// normaliza e garante id
+const normalizeProducts = (raw: ProductDTO[], currentPage: number) =>
+  (raw || []).map((p, idx) => {
+    const base = String((p as any)?.id ?? (p as any)?._id ?? '')
+    const safeId = base || makeTmpId(p?.name ?? '', currentPage, idx)
+    return { ...p, id: safeId }
+  })
 
 export function SearchProducts() {
   const toast = useToast()
@@ -25,12 +39,13 @@ export function SearchProducts() {
   const [searchTerm, setSearchTerm] = useState('')
   const [products, setProducts] = useState<ProductDTO[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [isSearching, setIsSearching] = useState(false)
 
-  // 🔍 Foca no input ao abrir
+  // foca no input ao abrir
   useFocusEffect(
     useCallback(() => {
       setTimeout(() => inputRef.current?.focus(), 100)
@@ -41,38 +56,63 @@ export function SearchProducts() {
     navigation.navigate('productDetails', { productId })
   }
 
-  // 🔥 Carregar produtos ativos com paginação
-  const fetchProducts = async (reset = false) => {
+  // busca ativa (com fallback)
+  const fetchInitialSuggestions = useCallback(async () => {
+    setIsLoading(true)
+    setHasMore(true)
     try {
-      const currentPage = reset ? 1 : page
-
-      const response = await api.get('/products/active', {
-        params: {
-          page: currentPage,
-          limit: 6,
-        },
+      // 1) tenta ativos
+      const res = await api.get('/products/active', {
+        params: { page: 1, limit: INITIAL_SUGGESTIONS },
       })
+      let fetched = normalizeProducts(res.data?.products || [], 1)
 
-      const fetchedProducts = response.data.products || []
-
-      if (reset) {
-        setProducts(fetchedProducts)
-      } else {
-        setProducts((prev) => [...prev, ...fetchedProducts])
+      // 2) fallback: tenta retornar “algo”
+      if (fetched.length === 0) {
+        try {
+          const res2 = await api.get('/products/search', {
+            params: { query: 'a' },
+          })
+          fetched = normalizeProducts(res2.data?.products || [], 1).slice(
+            0,
+            INITIAL_SUGGESTIONS,
+          )
+        } catch {
+          // ignora erro do fallback
+        }
       }
 
-      setHasMore(fetchedProducts.length >= 6)
+      setProducts(fetched)
+      setHasMore(fetched.length >= INITIAL_SUGGESTIONS)
     } catch (error) {
       const title =
         error instanceof AppError ? error.message : 'Erro ao carregar produtos.'
       toast.show({ title, placement: 'top', bgColor: 'red.500' })
+      setProducts([])
+      setHasMore(false)
     } finally {
       setIsLoading(false)
+      setHasLoaded(true)
+    }
+  }, [toast])
+
+  // paginação padrão (ativos)
+  const fetchMore = useCallback(async (currentPage: number) => {
+    try {
+      const res = await api.get('/products/active', {
+        params: { page: currentPage, limit: PAGE_SIZE },
+      })
+      const fetched = normalizeProducts(res.data?.products || [], currentPage)
+      setProducts((prev) => [...prev, ...fetched])
+      setHasMore(fetched.length >= PAGE_SIZE)
+    } catch {
+      setHasMore(false)
+    } finally {
       setIsLoadingMore(false)
     }
-  }
+  }, [])
 
-  // 🔍 Busca produtos
+  // busca por texto
   const searchProducts = useCallback(
     debounce(async (query: string) => {
       try {
@@ -82,9 +122,9 @@ export function SearchProducts() {
         const response = await api.get('/products/search', {
           params: { query },
         })
-
-        setProducts(response.data.products || [])
-        setHasMore(false) // Busca não tem paginação
+        const fetched = normalizeProducts(response.data?.products || [], 1)
+        setProducts(fetched)
+        setHasMore(false) // sem paginação no modo busca
       } catch (error) {
         const title =
           error instanceof AppError ? error.message : 'Erro ao buscar produtos.'
@@ -92,60 +132,75 @@ export function SearchProducts() {
         setProducts([])
       } finally {
         setIsLoading(false)
+        setHasLoaded(true)
         setIsLoadingMore(false)
       }
     }, 500),
-    [],
+    [toast],
   )
 
-  // 🧠 Gerenciar mudança no input
+  // input change
   const handleSearchChange = (text: string) => {
     setSearchTerm(text)
-
     const formattedQuery = removeAccents(text.trim())
 
     if (formattedQuery === '') {
-      // 🔄 Limpar busca → listar todos
-      if (formattedQuery === '') {
-        setIsSearching(false)
-        setPage(1)
-        fetchProducts(true)
-      }
+      // volta p/ sugestões iniciais
+      setIsSearching(false)
+      setPage(1)
+      setHasLoaded(false)
+      fetchInitialSuggestions()
     } else {
-      // 🔍 Fazer busca
       searchProducts(formattedQuery)
     }
   }
 
-  // ⬇️ Scroll infinito → carrega mais
-  const handleLoadMore = async () => {
+  // scroll infinito (somente quando NÃO está buscando)
+  const handleLoadMore = () => {
     if (isLoadingMore || !hasMore || isSearching) return
-
     setIsLoadingMore(true)
-    setPage((prev) => prev + 1)
+    const next = page + 1
+    setPage(next)
+    fetchMore(next)
   }
 
-  // 🚀 Carrega produtos ao abrir
+  // primeira carga → sugestões iniciais
   useEffect(() => {
-    fetchProducts(true)
-  }, [])
+    fetchInitialSuggestions()
+  }, [fetchInitialSuggestions])
 
-  // 🔄 Carrega mais quando page muda (scroll infinito)
-  useEffect(() => {
-    if (page > 1 && !isSearching) {
-      fetchProducts()
-    }
-  }, [page])
+  // loading inicial
+  if (!hasLoaded && isLoading) {
+    return (
+      <VStack flex={1} bg="white" safeArea>
+        <HomeScreen title="Pesquisar" />
+        <Box px={4} pt={4}>
+          <TextInput
+            ref={inputRef}
+            style={styles.input}
+            placeholder="Buscar produtos..."
+            placeholderTextColor="#777"
+            value={searchTerm}
+            onChangeText={handleSearchChange}
+            returnKeyType="search"
+            autoCorrect={false}
+          />
+        </Box>
+        <Loading />
+      </VStack>
+    )
+  }
 
   return (
     <VStack flex={1} bg="white" safeArea>
       <HomeScreen title="Pesquisar" />
 
+      {/* Campo de busca */}
       <Box px={4} pt={4}>
         <TextInput
           ref={inputRef}
           style={styles.input}
-          placeholder="Buscar produtos..."
+          placeholder="Digite o nome do produto"
           placeholderTextColor="#777"
           value={searchTerm}
           onChangeText={handleSearchChange}
@@ -154,7 +209,8 @@ export function SearchProducts() {
         />
       </Box>
 
-      <Box px={4} py={2} bg="primary.100" mx={4} my={2} borderRadius="md">
+      {/* Banner cashback */}
+      <Box px={4} py={2} mx={4} mt={2} bg="primary.100" borderRadius="md">
         <HStack alignItems="center" space={1}>
           <MaterialIcons name="local-offer" size={18} color="#00875F" />
           <Text color="#00875F" fontWeight="bold">
@@ -165,7 +221,9 @@ export function SearchProducts() {
 
       <FlatList
         data={products}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) =>
+          item?.id ? `prod-${item.id}` : `idx-${index}`
+        }
         numColumns={2}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.contentContainer}
@@ -182,7 +240,7 @@ export function SearchProducts() {
             <Loading />
           ) : (
             <Text textAlign="center" mt={10}>
-              Digite o nome do produto que deseja encontrar!
+              Nenhum produto encontrado.
             </Text>
           )
         }
