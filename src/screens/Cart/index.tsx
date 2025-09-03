@@ -246,7 +246,7 @@ export function Cart() {
   }
 
   return (
-    <VStack flex={1} safeArea mt={-5}>
+    <VStack flex={1} safeArea>
       <HomeScreen title="Carrinho" />
 
       <VStack flex={1} bg="gray.100" p={2} mb={2}>

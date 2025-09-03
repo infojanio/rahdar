@@ -14,12 +14,14 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import * as ImagePicker from 'expo-image-picker'
 import { VStack, Center, Text, Icon, IconButton, useToast } from 'native-base'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
+import { TextInputMask } from 'react-native-masked-text'
 
 import { Input } from '@components/Input'
 import { Button } from '@components/Button'
 import { useAuth } from '@hooks/useAuth'
 import { api } from '@services/api'
 import { useNavigation } from '@react-navigation/native'
+import isValidCPF from '@utils/isValidCPF'
 
 // Cloudinary
 const CLOUDINARY_CLOUD_NAME = 'dwqr47iii'
@@ -30,25 +32,25 @@ type FormDataProps = {
   name: string
   phone: string
   avatar?: string
-  address?: {
-    street?: string
-    city?: string
-    state?: string
-    postalCode?: string
-  }
+  cpf: string
+  street?: string
+  city?: string
+  state?: string
+  postalCode?: string
 }
 
 const schema = yup.object({
   name: yup.string().required('Informe o nome'),
   phone: yup.string().required('Informe o telefone'),
-  address: yup
-    .object({
-      street: yup.string().optional(),
-      city: yup.string().optional(),
-      state: yup.string().optional(),
-      postalCode: yup.string().optional(),
-    })
-    .optional(),
+  avatar: yup.string().optional(),
+  cpf: yup
+    .string()
+    .required('CPF é obrigatório')
+    .test('cpf-valido', 'CPF inválido', (value) => isValidCPF(value || '')),
+  street: yup.string().optional(),
+  city: yup.string().optional(),
+  state: yup.string().optional(),
+  postalCode: yup.string().optional(),
 })
 
 function inferFileMeta(asset: ImagePicker.ImagePickerAsset) {
@@ -96,11 +98,6 @@ async function uploadAvatar(asset: ImagePicker.ImagePickerAsset) {
   return data.secure_url as string
 }
 
-// helper para aceitar /users/profile ou /users/profile
-function pickUserFromResponse(data: any) {
-  return data?.user ?? data ?? {}
-}
-
 export function ProfileEdit() {
   const { user } = useAuth()
   const nav = useNavigation()
@@ -123,41 +120,37 @@ export function ProfileEdit() {
       name: user?.name ?? '',
       phone: (user as any)?.phone ?? '',
       avatar: user?.avatar ?? '',
-      address: {
-        street: (user as any)?.address?.street ?? '',
-        city: (user as any)?.address?.city ?? '',
-        state: (user as any)?.address?.state ?? '',
-        postalCode: (user as any)?.address?.postalCode ?? '',
-      },
+      cpf: user?.cpf ?? '',
+      street: (user as any)?.address?.street ?? '',
+      city: (user as any)?.address?.city ?? '',
+      state: (user as any)?.address?.state ?? '',
+      postalCode: (user as any)?.address?.postalCode ?? '',
     },
   })
 
-  // Carrega o perfil do backend (com address achatado)
+  // Carrega o perfil do backend
   useEffect(() => {
     let mounted = true
     ;(async () => {
       try {
         setLoadingUser(true)
-        const { data } = await api.get('/users/profile') // ✅ rota única
+        const { data } = await api.get('/users/profile')
         const u = data?.user ?? {}
-
-        const addr = u?.address ?? null // já deve vir achatado pelo backend
+        const addr = u?.address ?? null
 
         if (!mounted) return
         setAvatarUrl(u?.avatar ?? null)
         reset({
           name: u?.name ?? '',
           phone: u?.phone ?? '',
+          cpf: u?.cpf ?? '',
           avatar: u?.avatar ?? '',
-          address: {
-            street: addr?.street ?? '',
-            city: addr?.city ?? '',
-            state: addr?.state ?? '',
-            postalCode: addr?.postalCode ?? '',
-          },
+          street: addr?.street ?? '',
+          city: addr?.city ?? '',
+          state: addr?.state ?? '',
+          postalCode: addr?.postalCode ?? '',
         })
       } catch (e) {
-        console.log('Erro ao carregar /users/profile:', e)
         toast.show({
           title: 'Não foi possível carregar seu perfil.',
           placement: 'top',
@@ -203,7 +196,6 @@ export function ProfileEdit() {
         bgColor: 'emerald.600',
       })
     } catch (e) {
-      console.log('upload avatar error:', e)
       toast.show({
         title: e?.message || 'Falha no upload do avatar.',
         placement: 'top',
@@ -217,21 +209,14 @@ export function ProfileEdit() {
   async function onSubmit(data: FormDataProps) {
     try {
       const payload = {
-        name: data.name,
-        phone: data.phone,
+        ...data,
         avatar: avatarUrl ?? undefined,
-        address: {
-          street: data.address?.street ?? '',
-          city: data.address?.city ?? '',
-          state: data.address?.state ?? '',
-          postalCode: data.address?.postalCode ?? '',
-        },
       }
 
-      const userId = (user as any)?.id // vem do seu AuthContext
+      const userId = (user as any)?.id
       if (!userId) throw new Error('ID do usuário não encontrado no contexto.')
 
-      await api.patch(`/users/${userId}`, payload) // ✅ rota única
+      await api.patch(`/users/${userId}`, payload)
 
       toast.show({
         title: 'Dados atualizados!',
@@ -240,7 +225,6 @@ export function ProfileEdit() {
       })
       nav.goBack()
     } catch (err) {
-      console.log('update profile error:', err)
       toast.show({
         title: 'Não foi possível salvar suas alterações.',
         placement: 'top',
@@ -330,24 +314,85 @@ export function ProfileEdit() {
                   placeholder="Nome completo"
                   leftIcon={<MaterialIcons name="person" size={24} />}
                   onChangeText={onChange}
-                  value={value ?? ''} // garante string
+                  value={value ?? ''}
                   errorMessage={errors.name?.message}
                 />
               )}
             />
 
+            {/* CPF com máscara */}
+            <Controller
+              control={control}
+              name="cpf"
+              render={({ field: { onChange, value } }) => (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    borderWidth: 1,
+                    borderColor: errors.cpf ? 'red' : '#ccc',
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    marginBottom: 8,
+                    height: 48,
+                  }}
+                >
+                  <MaterialIcons
+                    name="badge"
+                    size={20}
+                    color="#666"
+                    style={{ marginRight: 8 }}
+                  />
+                  <TextInputMask
+                    type={'cpf'}
+                    value={value ?? ''}
+                    onChangeText={onChange}
+                    style={{ flex: 1, fontSize: 16 }}
+                    keyboardType="numeric"
+                  />
+                </View>
+              )}
+            />
+            {errors.cpf && (
+              <Text style={{ color: 'red', fontSize: 12 }}>
+                {errors.cpf.message}
+              </Text>
+            )}
+
+            {/* Telefone com máscara */}
             <Controller
               control={control}
               name="phone"
               render={({ field: { onChange, value } }) => (
-                <Input
-                  placeholder="Telefone"
-                  keyboardType="phone-pad"
-                  leftIcon={<MaterialIcons name="phone" size={20} />}
-                  onChangeText={onChange}
-                  value={value ?? ''} // garante string
-                  errorMessage={errors.phone?.message}
-                />
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    borderWidth: 1,
+                    borderColor: '#ccc',
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                  }}
+                >
+                  <MaterialIcons
+                    name="phone"
+                    size={20}
+                    color="#666"
+                    style={{ marginRight: 8 }}
+                  />
+                  <TextInputMask
+                    type={'cel-phone'}
+                    options={{
+                      maskType: 'BRL',
+                      withDDD: true,
+                      dddMask: '(99) ',
+                    }}
+                    value={value ?? ''}
+                    onChangeText={onChange}
+                    style={{ flex: 1, fontSize: 16, height: 48 }}
+                    keyboardType="phone-pad"
+                  />
+                </View>
               )}
             />
 
@@ -357,49 +402,49 @@ export function ProfileEdit() {
 
             <Controller
               control={control}
-              name="address.street"
+              name="street"
               render={({ field: { onChange, value } }) => (
                 <Input
                   placeholder="Rua"
                   leftIcon={<MaterialIcons name="location-on" size={20} />}
                   onChangeText={onChange}
                   value={value ?? ''}
-                  errorMessage={errors.address?.street?.message}
+                  errorMessage={errors.street?.message}
                 />
               )}
             />
 
             <Controller
               control={control}
-              name="address.city"
+              name="city"
               render={({ field: { onChange, value } }) => (
                 <Input
                   placeholder="Cidade"
                   leftIcon={<MaterialIcons name="location-city" size={20} />}
                   onChangeText={onChange}
                   value={value ?? ''}
-                  errorMessage={errors.address?.city?.message}
+                  errorMessage={errors.city?.message}
                 />
               )}
             />
 
             <Controller
               control={control}
-              name="address.state"
+              name="state"
               render={({ field: { onChange, value } }) => (
                 <Input
                   placeholder="Estado"
                   leftIcon={<MaterialIcons name="map" size={20} />}
                   onChangeText={onChange}
                   value={value ?? ''}
-                  errorMessage={errors.address?.state?.message}
+                  errorMessage={errors.state?.message}
                 />
               )}
             />
 
             <Controller
               control={control}
-              name="address.postalCode"
+              name="postalCode"
               render={({ field: { onChange, value } }) => (
                 <Input
                   placeholder="CEP"
@@ -409,7 +454,7 @@ export function ProfileEdit() {
                   }
                   onChangeText={onChange}
                   value={value ?? ''}
-                  errorMessage={errors.address?.postalCode?.message}
+                  errorMessage={errors.postalCode?.message}
                 />
               )}
             />

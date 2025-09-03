@@ -26,11 +26,29 @@ import { api } from '@services/api'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
 import isValidCPF from '@utils/isValidCPF'
 
-// ---------- CONFIG CLOUDINARY (AJUSTE) ----------
-const CLOUDINARY_CLOUD_NAME = 'dwqr47iii' // seu cloud name
-const CLOUDINARY_UPLOAD_PRESET = 'avatars' // unsigned preset
-const CLOUDINARY_FOLDER = 'avatars' // pasta opcional
-// -----------------------------------------------
+// ---------- CONFIG CLOUDINARY ----------
+const CLOUDINARY_CLOUD_NAME = 'dwqr47iii'
+const CLOUDINARY_UPLOAD_PRESET = 'avatars'
+const CLOUDINARY_FOLDER = 'avatars'
+// --------------------------------------
+
+// -------- Helpers de formatação --------
+function formatPhone(value: string) {
+  return value
+    .replace(/\D/g, '')
+    .replace(/^(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d)/, '$1-$2')
+    .replace(/(-\d{4})\d+?$/, '$1')
+}
+
+function formatCPF(value: string) {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+}
+// ---------------------------------------
 
 type FormDataProps = {
   name: string
@@ -41,7 +59,6 @@ type FormDataProps = {
   role: string
   password: string
   password_confirm: string
-
   street: string
   city: string
   state: string
@@ -66,14 +83,13 @@ const signUpSchema = yup.object({
     .string()
     .oneOf([yup.ref('password')], 'A senha digitada não confere!')
     .required('Confirme a senha'),
-
   street: yup.string().required('Informe a rua'),
   city: yup.string().required('Informe a cidade'),
   state: yup.string().required('Informe o estado'),
   postalCode: yup.string().required('Informe o CEP'),
 })
 
-// -------- Helpers de upload (web + nativo) --------
+// -------- Helpers de upload --------
 function inferFileMeta(asset: ImagePicker.ImagePickerAsset) {
   const filename =
     asset.fileName || asset.uri.split('/').pop() || `avatar-${Date.now()}.jpg`
@@ -96,13 +112,12 @@ async function uploadAvatarToCloudinary(asset: ImagePicker.ImagePickerAsset) {
   if (Platform.OS === 'web') {
     const resp = await fetch(asset.uri)
     const blob = await resp.blob()
-    // limite opcional de 5MB
     const MAX = 5 * 1024 * 1024
     if (blob.size > MAX) throw new Error('Imagem acima de 5MB.')
     const file = new File([blob], filename, { type: mime })
     form.append('file', file)
   } else {
-    // @ts-ignore (shape de arquivo do RN)
+    // @ts-ignore
     form.append('file', { uri: asset.uri, name: filename, type: mime })
   }
 
@@ -119,19 +134,17 @@ async function uploadAvatarToCloudinary(asset: ImagePicker.ImagePickerAsset) {
   const data = await res.json()
   return data.secure_url as string
 }
-// --------------------------------------------------
+// -----------------------------------
 
 export function SignUp() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarUploading, setAvatarUploading] = useState(false)
 
   const scrollViewRef = useRef<ScrollView>(null)
   const toast = useToast()
-
   const { signIn } = useAuth()
   const { userId } = useAuth()
   const navigation = useNavigation<AppNavigatorRoutesProps>()
@@ -148,10 +161,6 @@ export function SignUp() {
     navigation.goBack()
   }
 
-  function handleGoLocalization(userId: string) {
-    navigation.navigate('localization', { userId })
-  }
-
   async function handlePickAvatar() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') {
@@ -164,7 +173,7 @@ export function SignUp() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], // só imagens
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.9,
@@ -204,7 +213,7 @@ export function SignUp() {
         email: data.email,
         phone: data.phone,
         cpf: data.cpf,
-        avatar: avatarUrl ?? 'avatar.jpg', // << usa a URL do Cloudinary (ou default)
+        avatar: avatarUrl ?? 'avatar.jpg',
         role: 'USER',
         password: data.password,
         street: data.street,
@@ -248,7 +257,7 @@ export function SignUp() {
     scrollViewRef.current?.scrollToEnd({ animated: true })
   }
 
-  // REFERÊNCIAS para focar nos campos
+  // REFs
   const emailRef = useRef<any>(null)
   const phoneRef = useRef<any>(null)
   const cpfRef = useRef<any>(null)
@@ -289,7 +298,7 @@ export function SignUp() {
             </Text>
           </Center>
 
-          {/* Avatar (preview + escolher) */}
+          {/* Avatar */}
           <Center mt={4} mb={2}>
             <TouchableOpacity onPress={handlePickAvatar} activeOpacity={0.8}>
               <View
@@ -331,6 +340,7 @@ export function SignUp() {
             </Text>
           </Center>
 
+          {/* Dados pessoais */}
           <VStack space={5}>
             <Text fontSize="md" color="gray.600" fontWeight="semibold">
               Dados pessoais
@@ -374,6 +384,7 @@ export function SignUp() {
               )}
             />
 
+            {/* Telefone com máscara */}
             <Controller
               control={control}
               name="phone"
@@ -383,15 +394,16 @@ export function SignUp() {
                   placeholder="Telefone"
                   keyboardType="phone-pad"
                   returnKeyType="next"
-                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  onSubmitEditing={() => cpfRef.current?.focus()}
                   leftIcon={<MaterialIcons name="phone" size={20} />}
-                  onChangeText={onChange}
-                  value={value}
+                  onChangeText={(text) => onChange(formatPhone(text))}
+                  value={formatPhone(value || '')}
                   errorMessage={errors.phone?.message}
                 />
               )}
             />
 
+            {/* CPF com máscara */}
             <Controller
               control={control}
               name="cpf"
@@ -403,13 +415,14 @@ export function SignUp() {
                   returnKeyType="next"
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   leftIcon={<MaterialIcons name="document-scanner" size={20} />}
-                  onChangeText={onChange}
-                  value={value}
+                  onChangeText={(text) => onChange(formatCPF(text))}
+                  value={formatCPF(value || '')}
                   errorMessage={errors.cpf?.message}
                 />
               )}
             />
 
+            {/* Senha */}
             <Controller
               control={control}
               name="password"
@@ -441,6 +454,7 @@ export function SignUp() {
               )}
             />
 
+            {/* Confirmar senha */}
             <Controller
               control={control}
               name="password_confirm"
@@ -478,6 +492,7 @@ export function SignUp() {
               )}
             />
 
+            {/* Endereço */}
             <Text fontSize="md" color="gray.600" fontWeight="semibold" mt={4}>
               Endereço
             </Text>

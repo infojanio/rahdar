@@ -192,7 +192,7 @@ export function SearchProducts() {
   }
 
   return (
-    <VStack flex={1} bg="white" safeArea mt={-5}>
+    <VStack flex={1} bg="white" safeArea>
       <HomeScreen title="Pesquisar" />
 
       {/* Campo de busca */}

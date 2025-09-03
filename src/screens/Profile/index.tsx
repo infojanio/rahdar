@@ -96,100 +96,110 @@ export function Profile() {
   const displayAvatar = userView?.avatar ?? user?.avatar
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View>
       <HomeScreen title="Cashback Acumulado" />
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Cabeçalho de perfil com avatar + botão Alterar */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleEditProfile} activeOpacity={0.8}>
+            <UserPhoto
+              source={
+                displayAvatar
+                  ? { uri: displayAvatar }
+                  : undefined /* defaultUserPhotoImg */
+              }
+              alt="Foto do usuário"
+              size={24}
+              mr={3}
+            />
+          </TouchableOpacity>
 
-      {/* Cabeçalho de perfil com avatar + botão Alterar */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleEditProfile} activeOpacity={0.8}>
-          <UserPhoto
-            source={
-              displayAvatar
-                ? { uri: displayAvatar }
-                : undefined /* defaultUserPhotoImg */
-            }
-            alt="Foto do usuário"
-            size={24}
-            mr={3}
-          />
-        </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.userName} numberOfLines={1}>
+              {displayName}
+            </Text>
+            <Text style={styles.userEmail} numberOfLines={1}>
+              {displayEmail}
+            </Text>
 
-        <View style={{ flex: 1 }}>
-          <Text style={styles.userName} numberOfLines={1}>
-            {displayName}
-          </Text>
-          <Text style={styles.userEmail} numberOfLines={1}>
-            {displayEmail}
-          </Text>
+            <View style={styles.avatarActions}>
+              <TouchableOpacity
+                onPress={handleEditProfile}
+                style={[styles.smallBtn, { backgroundColor: '#0EA5E9' }]}
+              >
+                <Text style={styles.smallBtnText}>Alterar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
 
-          <View style={styles.avatarActions}>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Saldo de Cashback</Text>
+
+          <View style={styles.balanceRow}>
+            <View>
+              <Text style={styles.label}>Disponível</Text>
+              <Text style={styles.value}>R$ {balance.toFixed(2)}</Text>
+            </View>
+            <View>
+              <Text style={styles.label}>Recebido</Text>
+              <Text style={styles.valueReceived}>
+                {totalReceived.toFixed(2)}
+              </Text>
+            </View>
+            <View>
+              <Text style={styles.label}>Usado</Text>
+              <Text style={styles.valueUsed}>{totalUsed.toFixed(2)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.actions}>
             <TouchableOpacity
-              onPress={handleEditProfile}
-              style={[styles.smallBtn, { backgroundColor: '#0EA5E9' }]}
+              style={styles.button}
+              onPress={handleViewStatement}
             >
-              <Text style={styles.smallBtnText}>Alterar</Text>
+              <Text style={styles.buttonText}>Ver Pedidos</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.button} onPress={handleUseCashback}>
+              <Text style={styles.buttonText}>Usar Cashback</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Saldo de Cashback</Text>
+        <View style={styles.summary}>
+          <Text style={styles.summaryTitle}>Extrato de Cashback</Text>
 
-        <View style={styles.balanceRow}>
-          <View>
-            <Text style={styles.label}>Disponível</Text>
-            <Text style={styles.value}>R$ {balance.toFixed(2)}</Text>
-          </View>
-          <View>
-            <Text style={styles.label}>Recebido</Text>
-            <Text style={styles.valueReceived}>{totalReceived.toFixed(2)}</Text>
-          </View>
-          <View>
-            <Text style={styles.label}>Usado</Text>
-            <Text style={styles.valueUsed}>{totalUsed.toFixed(2)}</Text>
-          </View>
+          {statement.length === 0 ? (
+            <Text style={styles.summaryLabel}>
+              Nenhuma transação encontrada.
+            </Text>
+          ) : (
+            <>
+              {statement.map((item) => (
+                <View key={item.id} style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>
+                    {item.type === 'RECEIVE' ? 'Recebido' : 'Utilizado'} -{' '}
+                    {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.summaryValue,
+                      {
+                        color: item.type === 'RECEIVE' ? '#16A34A' : '#EF4444',
+                      },
+                    ]}
+                  >
+                    {item.type === 'RECEIVE' ? '+' : '-'} R${' '}
+                    {item.amount.toFixed(2)}
+                  </Text>
+                </View>
+              ))}
+            </>
+          )}
         </View>
-
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.button} onPress={handleViewStatement}>
-            <Text style={styles.buttonText}>Ver Pedidos</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button} onPress={handleUseCashback}>
-            <Text style={styles.buttonText}>Usar Cashback</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.summary}>
-        <Text style={styles.summaryTitle}>Extrato de Cashback</Text>
-
-        {statement.length === 0 ? (
-          <Text style={styles.summaryLabel}>Nenhuma transação encontrada.</Text>
-        ) : (
-          <>
-            {statement.map((item) => (
-              <View key={item.id} style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>
-                  {item.type === 'RECEIVE' ? 'Recebido' : 'Utilizado'} -{' '}
-                  {new Date(item.created_at).toLocaleDateString('pt-BR')}
-                </Text>
-                <Text
-                  style={[
-                    styles.summaryValue,
-                    { color: item.type === 'RECEIVE' ? '#16A34A' : '#EF4444' },
-                  ]}
-                >
-                  {item.type === 'RECEIVE' ? '+' : '-'} R${' '}
-                  {item.amount.toFixed(2)}
-                </Text>
-              </View>
-            ))}
-          </>
-        )}
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   )
 }
 

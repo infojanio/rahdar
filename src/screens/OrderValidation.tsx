@@ -277,7 +277,7 @@ export function OrderValidation() {
   }
 
   return (
-    <Box flex={1} bg="gray.50" safeArea mt={-5}>
+    <Box flex={1} bg="gray.50" safeArea>
       <HomeScreen title="Validação de Pedidos" />
 
       <Box px={4} py={2}>
