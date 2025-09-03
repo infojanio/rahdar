@@ -1,9 +1,18 @@
 import React, { useRef, useState } from 'react'
-import { ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native'
+import {
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  View,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useForm, Controller } from 'react-hook-form'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
+import * as ImagePicker from 'expo-image-picker'
 
 import { VStack, Center, Text, Icon, IconButton, useToast } from 'native-base'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
@@ -15,27 +24,38 @@ import { AppError } from '@utils/AppError'
 import { useAuth } from '@hooks/useAuth'
 import { api } from '@services/api'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
+import isValidCPF from '@utils/isValidCPF'
+
+// ---------- CONFIG CLOUDINARY (AJUSTE) ----------
+const CLOUDINARY_CLOUD_NAME = 'dwqr47iii' // seu cloud name
+const CLOUDINARY_UPLOAD_PRESET = 'avatars' // unsigned preset
+const CLOUDINARY_FOLDER = 'avatars' // pasta opcional
+// -----------------------------------------------
 
 type FormDataProps = {
   name: string
   email: string
   phone: string
+  cpf: string
   avatar: string
   role: string
   password: string
   password_confirm: string
-  address: {
-    street: string
-    city: string
-    state: string
-    postalCode: string
-  }
+
+  street: string
+  city: string
+  state: string
+  postalCode: string
 }
 
 const signUpSchema = yup.object({
   name: yup.string().required('Informe o nome'),
   email: yup.string().required('Informe o e-mail').email('E-mail inválido'),
   phone: yup.string().required('Informe o telefone'),
+  cpf: yup
+    .string()
+    .required('CPF é obrigatório')
+    .test('cpf-valido', 'CPF inválido', (value) => isValidCPF(value || '')),
   avatar: yup.string().default('avatar.jpg'),
   role: yup.string().default('USER'),
   password: yup
@@ -46,21 +66,70 @@ const signUpSchema = yup.object({
     .string()
     .oneOf([yup.ref('password')], 'A senha digitada não confere!')
     .required('Confirme a senha'),
-  address: yup.object({
-    street: yup.string().required('Informe a rua'),
-    city: yup.string().required('Informe a cidade'),
-    state: yup.string().required('Informe o estado'),
-    postalCode: yup.string().required('Informe o CEP'),
-  }),
+
+  street: yup.string().required('Informe a rua'),
+  city: yup.string().required('Informe a cidade'),
+  state: yup.string().required('Informe o estado'),
+  postalCode: yup.string().required('Informe o CEP'),
 })
+
+// -------- Helpers de upload (web + nativo) --------
+function inferFileMeta(asset: ImagePicker.ImagePickerAsset) {
+  const filename =
+    asset.fileName || asset.uri.split('/').pop() || `avatar-${Date.now()}.jpg`
+
+  let mime = asset.mimeType
+  if (!mime) {
+    const ext = (filename.split('.').pop() || '').toLowerCase()
+    mime =
+      ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+  }
+  return { filename, mime }
+}
+
+async function uploadAvatarToCloudinary(asset: ImagePicker.ImagePickerAsset) {
+  const { filename, mime } = inferFileMeta(asset)
+  const form = new FormData()
+  form.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
+  if (CLOUDINARY_FOLDER) form.append('folder', CLOUDINARY_FOLDER)
+
+  if (Platform.OS === 'web') {
+    const resp = await fetch(asset.uri)
+    const blob = await resp.blob()
+    // limite opcional de 5MB
+    const MAX = 5 * 1024 * 1024
+    if (blob.size > MAX) throw new Error('Imagem acima de 5MB.')
+    const file = new File([blob], filename, { type: mime })
+    form.append('file', file)
+  } else {
+    // @ts-ignore (shape de arquivo do RN)
+    form.append('file', { uri: asset.uri, name: filename, type: mime })
+  }
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+    { method: 'POST', body: form },
+  )
+
+  if (!res.ok) {
+    const txt = await res.text()
+    throw new Error(`Falha no upload do avatar. ${res.status} - ${txt}`)
+  }
+
+  const data = await res.json()
+  return data.secure_url as string
+}
+// --------------------------------------------------
 
 export function SignUp() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const scrollViewRef = useRef<ScrollView>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
+  const scrollViewRef = useRef<ScrollView>(null)
   const toast = useToast()
 
   const { signIn } = useAuth()
@@ -83,6 +152,49 @@ export function SignUp() {
     navigation.navigate('localization', { userId })
   }
 
+  async function handlePickAvatar() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      toast.show({
+        title: 'Permissão necessária para acessar suas fotos.',
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+      return
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'], // só imagens
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    })
+    if (result.canceled) return
+
+    const asset = result.assets?.[0]
+    if (!asset?.uri) return
+
+    try {
+      setAvatarUploading(true)
+      const url = await uploadAvatarToCloudinary(asset)
+      setAvatarUrl(url)
+      toast.show({
+        title: 'Foto enviada!',
+        placement: 'top',
+        bgColor: 'emerald.600',
+      })
+    } catch (e) {
+      console.log('Upload avatar error:', e)
+      toast.show({
+        title: e?.message || 'Não foi possível enviar sua foto.',
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
   async function handleSignUp(data: FormDataProps) {
     try {
       setIsLoading(true)
@@ -91,15 +203,14 @@ export function SignUp() {
         name: data.name,
         email: data.email,
         phone: data.phone,
-        avatar: 'avatar.jpg',
+        cpf: data.cpf,
+        avatar: avatarUrl ?? 'avatar.jpg', // << usa a URL do Cloudinary (ou default)
         role: 'USER',
         password: data.password,
-        address: {
-          street: data.address.street,
-          city: data.address.city,
-          state: data.address.state,
-          postalCode: data.address.postalCode,
-        },
+        street: data.street,
+        city: data.city,
+        state: data.state,
+        postalCode: data.postalCode,
       })
 
       const user = await signIn(data.email, data.password)
@@ -113,8 +224,7 @@ export function SignUp() {
         } else {
           navigation.navigate('localization', { userId: user.id })
         }
-      } catch (err) {
-        // Se der erro, assume que a localização ainda não foi cadastrada
+      } catch {
         navigation.navigate('localization', { userId: user.id })
       }
     } catch (error) {
@@ -141,6 +251,7 @@ export function SignUp() {
   // REFERÊNCIAS para focar nos campos
   const emailRef = useRef<any>(null)
   const phoneRef = useRef<any>(null)
+  const cpfRef = useRef<any>(null)
   const passwordRef = useRef<any>(null)
   const passwordConfirmRef = useRef<any>(null)
   const streetRef = useRef<any>(null)
@@ -159,14 +270,7 @@ export function SignUp() {
         keyboardShouldPersistTaps="handled"
         ref={scrollViewRef}
       >
-        <VStack
-          flex={1}
-          p={4} // Margens menores
-          pb={12}
-          space={2}
-          bg="gray.50" // Cor de fundo na view
-          borderRadius={8} // Bordas arredondadas
-        >
+        <VStack flex={1} p={4} pb={12} space={2} bg="gray.50" borderRadius={8}>
           <IconButton
             borderRadius="full"
             variant="ghost"
@@ -182,6 +286,48 @@ export function SignUp() {
             </Text>
             <Text fontSize="sm" color="gray.500" mt={1}>
               Preencha seus dados para continuar
+            </Text>
+          </Center>
+
+          {/* Avatar (preview + escolher) */}
+          <Center mt={4} mb={2}>
+            <TouchableOpacity onPress={handlePickAvatar} activeOpacity={0.8}>
+              <View
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: 999,
+                  backgroundColor: '#E5E7EB',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  borderWidth: 2,
+                  borderColor: '#fff',
+                  shadowColor: '#000',
+                  shadowOpacity: 0.08,
+                  shadowRadius: 8,
+                }}
+              >
+                {avatarUploading ? (
+                  <ActivityIndicator />
+                ) : avatarUrl ? (
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Icon
+                    as={MaterialIcons}
+                    name="person"
+                    size={12}
+                    color="gray.400"
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
+            <Text mt={2} color="gray.600" fontSize="xs">
+              Toque para escolher uma foto
             </Text>
           </Center>
 
@@ -242,6 +388,24 @@ export function SignUp() {
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors.phone?.message}
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="cpf"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  ref={cpfRef}
+                  placeholder="CPF"
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  leftIcon={<MaterialIcons name="document-scanner" size={20} />}
+                  onChangeText={onChange}
+                  value={value}
+                  errorMessage={errors.cpf?.message}
                 />
               )}
             />
@@ -320,7 +484,7 @@ export function SignUp() {
 
             <Controller
               control={control}
-              name="address.street"
+              name="street"
               render={({ field: { onChange, value } }) => (
                 <Input
                   ref={streetRef}
@@ -331,14 +495,14 @@ export function SignUp() {
                   onFocus={scrollToEnd}
                   onChangeText={onChange}
                   value={value}
-                  errorMessage={errors.address?.street?.message}
+                  errorMessage={errors.street?.message}
                 />
               )}
             />
 
             <Controller
               control={control}
-              name="address.city"
+              name="city"
               render={({ field: { onChange, value } }) => (
                 <Input
                   ref={cityRef}
@@ -349,14 +513,14 @@ export function SignUp() {
                   onFocus={scrollToEnd}
                   onChangeText={onChange}
                   value={value}
-                  errorMessage={errors.address?.city?.message}
+                  errorMessage={errors.city?.message}
                 />
               )}
             />
 
             <Controller
               control={control}
-              name="address.state"
+              name="state"
               render={({ field: { onChange, value } }) => (
                 <Input
                   ref={stateRef}
@@ -367,14 +531,14 @@ export function SignUp() {
                   onFocus={scrollToEnd}
                   onChangeText={onChange}
                   value={value}
-                  errorMessage={errors.address?.state?.message}
+                  errorMessage={errors.state?.message}
                 />
               )}
             />
 
             <Controller
               control={control}
-              name="address.postalCode"
+              name="postalCode"
               render={({ field: { onChange, value } }) => (
                 <Input
                   ref={postalCodeRef}
@@ -388,17 +552,18 @@ export function SignUp() {
                   onFocus={scrollToEnd}
                   onChangeText={onChange}
                   value={value}
-                  errorMessage={errors.address?.postalCode?.message}
+                  errorMessage={errors.postalCode?.message}
                 />
               )}
             />
           </VStack>
 
           <Button
-            title="Próximo"
+            title={avatarUploading ? 'Enviando foto...' : 'Próximo'}
             mt={8}
             isLoading={isLoading}
             onPress={handleSubmit(handleSignUp)}
+            isDisabled={avatarUploading || isLoading}
           />
         </VStack>
       </ScrollView>

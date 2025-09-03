@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import {
   View,
   Text,
@@ -11,10 +11,11 @@ import {
 } from 'react-native'
 import { userService } from '@services/userService'
 import { orderService } from '@services/orderService'
-import { useNavigation } from '@react-navigation/native'
 import { HomeScreen } from '@components/HomeScreen'
-import { SearchProducts } from '@screens/SearchProducts'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
+import { UserPhoto } from '@components/HomeHeader/UserPhoto'
+import { useAuth } from '@hooks/useAuth'
+import { api } from '@services/api' // << vamos usar para buscar o perfil
 
 export function Profile() {
   const [balance, setBalance] = useState(0)
@@ -22,6 +23,9 @@ export function Profile() {
   const [totalReceived, setTotalReceived] = useState(0)
   const [totalUsed, setTotalUsed] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Novo: estado local com os dados mais recentes do usuário
+  const [userView, setUserView] = useState<any>(null)
 
   const [statement, setStatement] = useState<
     Array<{
@@ -33,17 +37,16 @@ export function Profile() {
   >([])
 
   const navigation = useNavigation<AppNavigatorRoutesProps>()
+  const { user } = useAuth()
 
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true)
-
       const [balanceData, pending, cashbackStatement] = await Promise.all([
         userService.getUserCashbackBalance(),
         orderService.getPendingCashback(),
         userService.getUserCashbackStatement(),
       ])
-
       setBalance(balanceData.balance)
       setTotalReceived(balanceData.totalReceived)
       setTotalUsed(balanceData.totalUsed)
@@ -57,19 +60,27 @@ export function Profile() {
     }
   }, [])
 
+  // Novo: fetch do perfil no foco, para refletir alterações da ProfileEdit
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const { data } = await api.get('/users/profile')
+      setUserView(data?.user ?? null)
+    } catch (e) {
+      // se a rota mudar, ajuste aqui
+      console.log('Erro ao carregar /users/profile:', e)
+    }
+  }, [])
+
   useFocusEffect(
     useCallback(() => {
+      fetchUserProfile()
       fetchData()
-    }, [fetchData]),
+    }, [fetchUserProfile, fetchData]),
   )
 
-  const handleViewStatement = () => {
-    navigation.navigate('orderHistory')
-  }
-
-  const handleUseCashback = () => {
-    navigation.navigate('searchProducts' as never)
-  }
+  const handleViewStatement = () => navigation.navigate('orderHistory')
+  const handleUseCashback = () => navigation.navigate('searchProducts' as never)
+  const handleEditProfile = () => navigation.navigate('profileEdit')
 
   if (isLoading) {
     return (
@@ -79,9 +90,48 @@ export function Profile() {
     )
   }
 
+  // Preferimos userView (recente do backend); se não tiver, cai para o user do contexto
+  const displayName = userView?.name ?? user?.name ?? 'Usuário'
+  const displayEmail = userView?.email ?? user?.email ?? ''
+  const displayAvatar = userView?.avatar ?? user?.avatar
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <HomeScreen title="Cashback Acumulado" />
+
+      {/* Cabeçalho de perfil com avatar + botão Alterar */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleEditProfile} activeOpacity={0.8}>
+          <UserPhoto
+            source={
+              displayAvatar
+                ? { uri: displayAvatar }
+                : undefined /* defaultUserPhotoImg */
+            }
+            alt="Foto do usuário"
+            size={24}
+            mr={3}
+          />
+        </TouchableOpacity>
+
+        <View style={{ flex: 1 }}>
+          <Text style={styles.userName} numberOfLines={1}>
+            {displayName}
+          </Text>
+          <Text style={styles.userEmail} numberOfLines={1}>
+            {displayEmail}
+          </Text>
+
+          <View style={styles.avatarActions}>
+            <TouchableOpacity
+              onPress={handleEditProfile}
+              style={[styles.smallBtn, { backgroundColor: '#0EA5E9' }]}
+            >
+              <Text style={styles.smallBtnText}>Alterar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Saldo de Cashback</Text>
@@ -93,13 +143,11 @@ export function Profile() {
           </View>
           <View>
             <Text style={styles.label}>Recebido</Text>
-            <Text style={styles.valueReceived}>
-              +{totalReceived.toFixed(2)}
-            </Text>
+            <Text style={styles.valueReceived}>{totalReceived.toFixed(2)}</Text>
           </View>
           <View>
             <Text style={styles.label}>Usado</Text>
-            <Text style={styles.valueUsed}>-{totalUsed.toFixed(2)}</Text>
+            <Text style={styles.valueUsed}>{totalUsed.toFixed(2)}</Text>
           </View>
         </View>
 
@@ -115,56 +163,57 @@ export function Profile() {
       </View>
 
       <View style={styles.summary}>
-        <Text style={styles.summaryTitle}>Resumo</Text>
+        <Text style={styles.summaryTitle}>Extrato de Cashback</Text>
 
-        <View style={styles.summary}>
-          <Text style={styles.summaryTitle}>Extrato de Cashback</Text>
-
-          {statement.length === 0 ? (
-            <Text style={styles.summaryLabel}>
-              Nenhuma transação encontrada.
-            </Text>
-          ) : (
-            <>
-              {statement.map((item) => (
-                <View key={item.id} style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>
-                    {item.type === 'RECEIVE' ? 'Recebido' : 'Utilizado'} -{' '}
-                    {new Date(item.created_at).toLocaleDateString('pt-BR')}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.summaryValue,
-                      {
-                        color: item.type === 'RECEIVE' ? '#16A34A' : '#EF4444',
-                      },
-                    ]}
-                  >
-                    {item.type === 'RECEIVE' ? '+' : '-'} R${' '}
-                    {item.amount.toFixed(2)}
-                  </Text>
-                </View>
-              ))}
-            </>
-          )}
-        </View>
+        {statement.length === 0 ? (
+          <Text style={styles.summaryLabel}>Nenhuma transação encontrada.</Text>
+        ) : (
+          <>
+            {statement.map((item) => (
+              <View key={item.id} style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  {item.type === 'RECEIVE' ? 'Recebido' : 'Utilizado'} -{' '}
+                  {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                </Text>
+                <Text
+                  style={[
+                    styles.summaryValue,
+                    { color: item.type === 'RECEIVE' ? '#16A34A' : '#EF4444' },
+                  ]}
+                >
+                  {item.type === 'RECEIVE' ? '+' : '-'} R${' '}
+                  {item.amount.toFixed(2)}
+                </Text>
+              </View>
+            ))}
+          </>
+        )}
       </View>
     </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 2,
-    backgroundColor: '#F9FAFB',
-    flexGrow: 1,
+  container: { padding: 12, backgroundColor: '#F9FAFB', flexGrow: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#111827',
-  },
+  userName: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  userEmail: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  avatarActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  smallBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
+  smallBtnText: { color: '#fff', fontWeight: '600', fontSize: 12 },
+
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -187,36 +236,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 20,
   },
-  label: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#16A34A',
-  },
-  valueReceived: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#16A34A',
-  },
-  valueUsed: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#EF4444',
-  },
-  valuePending: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#F59E0B',
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
+  label: { fontSize: 14, color: '#6B7280', marginBottom: 4 },
+  value: { fontSize: 18, fontWeight: 'bold', color: '#16A34A' },
+  valueReceived: { fontSize: 16, fontWeight: 'bold', color: '#16A34A' },
+  valueUsed: { fontSize: 16, fontWeight: 'bold', color: '#EF4444' },
+
+  actions: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
   button: {
     backgroundColor: '#007AFF',
     paddingVertical: 10,
@@ -225,11 +250,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
+  buttonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
+
   summary: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -239,6 +261,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 2,
+    marginBottom: 24,
   },
   summaryTitle: {
     fontSize: 18,
@@ -251,18 +274,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  summaryLabel: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  summaryLabel: { fontSize: 14, color: '#6B7280' },
+  summaryValue: { fontSize: 16, fontWeight: 'bold', color: '#111827' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 })

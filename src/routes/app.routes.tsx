@@ -19,6 +19,7 @@ import { Cart } from '@screens/Cart'
 import { Checkout } from '@screens/Checkout'
 
 import { Profile } from '@screens/Profile'
+import { ProfileEdit } from '@screens/ProfileEdit'
 
 import { ProductDetails } from '@screens/ProductDetails'
 
@@ -48,6 +49,7 @@ type AppRoutes = {
   request: undefined
   redirect: undefined
   profile: undefined
+  profileEdit: undefined
   productList: undefined
   signUp: undefined
   localization: { userId: string }
@@ -190,7 +192,7 @@ export function AppRoutes() {
         name="profile"
         component={Profile}
         options={{
-          title: 'Extrato',
+          title: 'Conta',
 
           headerStyle: {
             backgroundColor: '#688633',
@@ -229,6 +231,14 @@ export function AppRoutes() {
       <Screen
         name="checkout"
         component={Checkout}
+        options={{
+          tabBarButton: () => null, // oculta da tab bar
+        }}
+      />
+
+      <Screen
+        name="profileEdit"
+        component={ProfileEdit}
         options={{
           tabBarButton: () => null, // oculta da tab bar
         }}
