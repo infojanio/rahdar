@@ -10,7 +10,7 @@ import HomeSvg from '@assets/home.svg'
 import SearchSvg from '@assets/search.svg'
 
 import CashbackSvg from '@assets/checked.svg'
-import ProfileSvg from '@assets/order.svg'
+import ProfileSvg from '@assets/profile.svg'
 import RequestSvg from '@assets/pedidos.svg'
 
 import { Home } from '@screens/Home'
@@ -192,7 +192,7 @@ export function AppRoutes() {
         name="profile"
         component={Profile}
         options={{
-          title: 'Conta',
+          title: 'Perfil',
 
           headerStyle: {
             backgroundColor: '#688633',
