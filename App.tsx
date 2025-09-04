@@ -23,7 +23,7 @@ export default function App() {
         // Deixa a barra oculta e só aparece ao deslizar a borda
         await NavigationBar.setVisibilityAsync('hidden')
         await NavigationBar.setBehaviorAsync('overlay-swipe')
-        // opcional: cor transparente (quando surgir)
+        // cor transparente quando aparecer
         await NavigationBar.setBackgroundColorAsync('transparent')
       }
     }
@@ -34,11 +34,10 @@ export default function App() {
     <SafeAreaProvider>
       <NativeBaseProvider>
         <CartProvider>
-          {/* Se quiser resolver sem mexer nas telas, deixe translucente = false */}
           <StatusBar
             barStyle="dark-content"
-            translucent={false}
-            backgroundColor="#ffffff"
+            translucent
+            backgroundColor="transparent"
           />
           <AuthContextProvider>
             {fontsLoaded ? <Routes /> : <Loading />}

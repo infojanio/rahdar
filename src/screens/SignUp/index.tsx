@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useForm, Controller } from 'react-hook-form'
@@ -47,6 +48,13 @@ function formatCPF(value: string) {
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+}
+
+function formatCEP(value: string) {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{5})(\d)/, '$1-$2')
+    .slice(0, 9)
 }
 // ---------------------------------------
 
@@ -145,20 +153,77 @@ export function SignUp() {
 
   const scrollViewRef = useRef<ScrollView>(null)
   const toast = useToast()
-  const { signIn } = useAuth()
-  const { userId } = useAuth()
+  const { signIn, userId } = useAuth()
   const navigation = useNavigation<AppNavigatorRoutesProps>()
 
   const {
     control,
     handleSubmit,
     formState: { errors },
+    trigger,
   } = useForm<FormDataProps>({
     resolver: yupResolver(signUpSchema),
   })
 
-  function handleGoBack() {
-    navigation.goBack()
+  // Refs dos campos para focar no erro
+  const refs: Record<string, React.RefObject<TextInput>> = {
+    name: useRef<TextInput>(null),
+    email: useRef<TextInput>(null),
+    phone: useRef<TextInput>(null),
+    cpf: useRef<TextInput>(null),
+    password: useRef<TextInput>(null),
+    password_confirm: useRef<TextInput>(null),
+    street: useRef<TextInput>(null),
+    city: useRef<TextInput>(null),
+    state: useRef<TextInput>(null),
+    postalCode: useRef<TextInput>(null),
+  }
+
+  async function handleSignUp(data: FormDataProps) {
+    const isValid = await trigger()
+    if (!isValid) {
+      const firstErrorField = Object.keys(errors)[0]
+      if (firstErrorField && refs[firstErrorField]?.current) {
+        refs[firstErrorField].current?.focus()
+        toast.show({
+          title: errors[firstErrorField]?.message || 'Verifique os dados',
+          placement: 'top',
+          bgColor: 'red.500',
+        })
+      }
+      return
+    }
+
+    try {
+      setIsLoading(true)
+
+      await api.post('/users', {
+        ...data,
+        avatar: avatarUrl ?? 'avatar.jpg',
+        role: 'USER',
+      })
+
+      const user = await signIn(data.email, data.password)
+
+      try {
+        const locationResponse = await api.get(`/users/${user.id}/location`)
+        const { latitude, longitude } = locationResponse.data
+        if (latitude && longitude) {
+          navigation.navigate('home', { userId })
+        } else {
+          navigation.navigate('localization', { userId: user.id })
+        }
+      } catch {
+        navigation.navigate('localization', { userId: user.id })
+      }
+    } catch (error) {
+      setIsLoading(false)
+      const isAppError = error instanceof AppError
+      const title = isAppError
+        ? error.message
+        : 'Não foi possível criar a conta. Tente novamente mais tarde!'
+      toast.show({ title, placement: 'top', bgColor: 'red.500' })
+    }
   }
 
   async function handlePickAvatar() {
@@ -193,7 +258,6 @@ export function SignUp() {
         bgColor: 'emerald.600',
       })
     } catch (e) {
-      console.log('Upload avatar error:', e)
       toast.show({
         title: e?.message || 'Não foi possível enviar sua foto.',
         placement: 'top',
@@ -204,70 +268,6 @@ export function SignUp() {
     }
   }
 
-  async function handleSignUp(data: FormDataProps) {
-    try {
-      setIsLoading(true)
-
-      await api.post('/users', {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        cpf: data.cpf,
-        avatar: avatarUrl ?? 'avatar.jpg',
-        role: 'USER',
-        password: data.password,
-        street: data.street,
-        city: data.city,
-        state: data.state,
-        postalCode: data.postalCode,
-      })
-
-      const user = await signIn(data.email, data.password)
-
-      try {
-        const locationResponse = await api.get(`/users/${user.id}/location`)
-        const { latitude, longitude } = locationResponse.data
-
-        if (latitude && longitude) {
-          navigation.navigate('home', { userId })
-        } else {
-          navigation.navigate('localization', { userId: user.id })
-        }
-      } catch {
-        navigation.navigate('localization', { userId: user.id })
-      }
-    } catch (error) {
-      console.log('Erro ao cadastrar usuário:', error)
-      setIsLoading(false)
-
-      const isAppError = error instanceof AppError
-      const title = isAppError
-        ? error.message
-        : 'Não foi possível criar a conta. Tente novamente mais tarde!'
-
-      toast.show({
-        title,
-        placement: 'top',
-        bgColor: 'red.500',
-      })
-    }
-  }
-
-  function scrollToEnd() {
-    scrollViewRef.current?.scrollToEnd({ animated: true })
-  }
-
-  // REFs
-  const emailRef = useRef<any>(null)
-  const phoneRef = useRef<any>(null)
-  const cpfRef = useRef<any>(null)
-  const passwordRef = useRef<any>(null)
-  const passwordConfirmRef = useRef<any>(null)
-  const streetRef = useRef<any>(null)
-  const cityRef = useRef<any>(null)
-  const stateRef = useRef<any>(null)
-  const postalCodeRef = useRef<any>(null)
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -275,17 +275,16 @@ export function SignUp() {
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         ref={scrollViewRef}
       >
-        <VStack flex={1} p={4} pb={12} space={2} bg="gray.50" borderRadius={8}>
+        <VStack flex={1} p={4} pb={12} space={2} bg="gray.50">
           <IconButton
             borderRadius="full"
             variant="ghost"
             size="sm"
             icon={<Icon as={Feather} name="chevron-left" size="8" />}
-            onPress={handleGoBack}
+            onPress={() => navigation.goBack()}
             alignSelf="flex-start"
           />
 
@@ -310,11 +309,6 @@ export function SignUp() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   overflow: 'hidden',
-                  borderWidth: 2,
-                  borderColor: '#fff',
-                  shadowColor: '#000',
-                  shadowOpacity: 0.08,
-                  shadowRadius: 8,
                 }}
               >
                 {avatarUploading ? (
@@ -340,22 +334,17 @@ export function SignUp() {
             </Text>
           </Center>
 
-          {/* Dados pessoais */}
-          <VStack space={5}>
-            <Text fontSize="md" color="gray.600" fontWeight="semibold">
-              Dados pessoais
-            </Text>
-
+          {/* Campos do formulário */}
+          <VStack space={4} mt={4}>
             <Controller
               control={control}
               name="name"
               render={({ field: { onChange, value } }) => (
                 <Input
+                  ref={refs.name}
                   placeholder="Nome completo"
                   autoCapitalize="words"
                   returnKeyType="next"
-                  onSubmitEditing={() => emailRef.current?.focus()}
-                  leftIcon={<MaterialIcons name="person" size={24} />}
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors.name?.message}
@@ -368,15 +357,11 @@ export function SignUp() {
               name="email"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  ref={emailRef}
+                  ref={refs.email}
                   placeholder="E-mail"
                   keyboardType="email-address"
                   autoCapitalize="none"
                   returnKeyType="next"
-                  onSubmitEditing={() => phoneRef.current?.focus()}
-                  leftIcon={
-                    <MaterialIcons name="email" size={20} color="#71717a" />
-                  }
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors.email?.message}
@@ -384,56 +369,50 @@ export function SignUp() {
               )}
             />
 
-            {/* Telefone com máscara */}
             <Controller
               control={control}
               name="phone"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  ref={phoneRef}
+                  ref={refs.phone}
                   placeholder="Telefone"
                   keyboardType="phone-pad"
                   returnKeyType="next"
-                  onSubmitEditing={() => cpfRef.current?.focus()}
-                  leftIcon={<MaterialIcons name="phone" size={20} />}
-                  onChangeText={(text) => onChange(formatPhone(text))}
+                  onChangeText={(t) => onChange(formatPhone(t))}
                   value={formatPhone(value || '')}
                   errorMessage={errors.phone?.message}
                 />
               )}
             />
 
-            {/* CPF com máscara */}
             <Controller
               control={control}
               name="cpf"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  ref={cpfRef}
+                  ref={refs.cpf}
                   placeholder="CPF"
                   keyboardType="numeric"
                   returnKeyType="next"
-                  onSubmitEditing={() => passwordRef.current?.focus()}
-                  leftIcon={<MaterialIcons name="document-scanner" size={20} />}
-                  onChangeText={(text) => onChange(formatCPF(text))}
+                  onChangeText={(t) => onChange(formatCPF(t))}
                   value={formatCPF(value || '')}
                   errorMessage={errors.cpf?.message}
                 />
               )}
             />
 
-            {/* Senha */}
             <Controller
               control={control}
               name="password"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  ref={passwordRef}
+                  ref={refs.password}
                   placeholder="Senha"
                   secureTextEntry={!showPassword}
                   returnKeyType="next"
-                  onSubmitEditing={() => passwordConfirmRef.current?.focus()}
-                  leftIcon={<MaterialIcons name="lock" size={20} />}
+                  onChangeText={onChange}
+                  value={value}
+                  errorMessage={errors.password?.message}
                   rightIcon={
                     <IconButton
                       icon={
@@ -447,25 +426,22 @@ export function SignUp() {
                       variant="ghost"
                     />
                   }
-                  onChangeText={onChange}
-                  value={value}
-                  errorMessage={errors.password?.message}
                 />
               )}
             />
 
-            {/* Confirmar senha */}
             <Controller
               control={control}
               name="password_confirm"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  ref={passwordConfirmRef}
+                  ref={refs.password_confirm}
                   placeholder="Confirme a senha"
                   secureTextEntry={!showConfirmPassword}
                   returnKeyType="next"
-                  onSubmitEditing={() => streetRef.current?.focus()}
-                  leftIcon={<MaterialIcons name="lock-outline" size={20} />}
+                  onChangeText={onChange}
+                  value={value}
+                  errorMessage={errors.password_confirm?.message}
                   rightIcon={
                     <IconButton
                       icon={
@@ -485,29 +461,18 @@ export function SignUp() {
                       variant="ghost"
                     />
                   }
-                  onChangeText={onChange}
-                  value={value}
-                  errorMessage={errors.password_confirm?.message}
                 />
               )}
             />
-
-            {/* Endereço */}
-            <Text fontSize="md" color="gray.600" fontWeight="semibold" mt={4}>
-              Endereço
-            </Text>
 
             <Controller
               control={control}
               name="street"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  ref={streetRef}
+                  ref={refs.street}
                   placeholder="Rua"
                   returnKeyType="next"
-                  onSubmitEditing={() => cityRef.current?.focus()}
-                  leftIcon={<MaterialIcons name="location-on" size={20} />}
-                  onFocus={scrollToEnd}
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors.street?.message}
@@ -520,12 +485,9 @@ export function SignUp() {
               name="city"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  ref={cityRef}
+                  ref={refs.city}
                   placeholder="Cidade"
                   returnKeyType="next"
-                  onSubmitEditing={() => stateRef.current?.focus()}
-                  leftIcon={<MaterialIcons name="location-city" size={20} />}
-                  onFocus={scrollToEnd}
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors.city?.message}
@@ -538,12 +500,9 @@ export function SignUp() {
               name="state"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  ref={stateRef}
+                  ref={refs.state}
                   placeholder="Estado"
                   returnKeyType="next"
-                  onSubmitEditing={() => postalCodeRef.current?.focus()}
-                  leftIcon={<MaterialIcons name="map" size={20} />}
-                  onFocus={scrollToEnd}
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors.state?.message}
@@ -556,17 +515,12 @@ export function SignUp() {
               name="postalCode"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  ref={postalCodeRef}
+                  ref={refs.postalCode}
                   placeholder="CEP"
                   keyboardType="numeric"
                   returnKeyType="done"
-                  onSubmitEditing={handleSubmit(handleSignUp)}
-                  leftIcon={
-                    <MaterialIcons name="local-post-office" size={20} />
-                  }
-                  onFocus={scrollToEnd}
-                  onChangeText={onChange}
-                  value={value}
+                  onChangeText={(t) => onChange(formatCEP(t))}
+                  value={formatCEP(value || '')}
                   errorMessage={errors.postalCode?.message}
                 />
               )}
@@ -574,7 +528,7 @@ export function SignUp() {
           </VStack>
 
           <Button
-            title={avatarUploading ? 'Enviando foto...' : 'Próximo'}
+            title={avatarUploading ? 'Enviando foto...' : 'Cadastrar'}
             mt={8}
             isLoading={isLoading}
             onPress={handleSubmit(handleSignUp)}

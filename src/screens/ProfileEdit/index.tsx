@@ -121,10 +121,10 @@ export function ProfileEdit() {
       phone: (user as any)?.phone ?? '',
       avatar: user?.avatar ?? '',
       cpf: user?.cpf ?? '',
-      street: (user as any)?.address?.street ?? '',
-      city: (user as any)?.address?.city ?? '',
-      state: (user as any)?.address?.state ?? '',
-      postalCode: (user as any)?.address?.postalCode ?? '',
+      street: user?.street ?? '',
+      city: user?.city ?? '',
+      state: user?.state ?? '',
+      postalCode: user?.postalCode ?? '',
     },
   })
 
@@ -136,7 +136,6 @@ export function ProfileEdit() {
         setLoadingUser(true)
         const { data } = await api.get('/users/profile')
         const u = data?.user ?? {}
-        const addr = u?.address ?? null
 
         if (!mounted) return
         setAvatarUrl(u?.avatar ?? null)
@@ -145,10 +144,10 @@ export function ProfileEdit() {
           phone: u?.phone ?? '',
           cpf: u?.cpf ?? '',
           avatar: u?.avatar ?? '',
-          street: addr?.street ?? '',
-          city: addr?.city ?? '',
-          state: addr?.state ?? '',
-          postalCode: addr?.postalCode ?? '',
+          street: u?.street ?? '',
+          city: u?.city ?? '',
+          state: u?.state ?? '',
+          postalCode: u?.postalCode ?? '',
         })
       } catch (e) {
         toast.show({
