@@ -191,7 +191,7 @@ export function Profile() {
                     ]}
                   >
                     {item.type === 'RECEIVE' ? '+' : '-'} R${' '}
-                    {item.amount.toFixed(2)}
+                    {Number(item.amount ?? 0).toFixed(2)}
                   </Text>
                 </View>
               ))}
