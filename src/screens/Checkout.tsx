@@ -143,6 +143,21 @@ export function Checkout() {
     setLoading(true)
 
     try {
+      // 🔒 Passo 1: Revalidar saldo no backend antes de confirmar
+      const balanceRes = await api.get('/users/balance')
+      const freshBalance = balanceRes.data.balance || 0
+      setCashbackBalance(freshBalance)
+
+      if (useCashback && freshBalance < discountApplied) {
+        Alert.alert(
+          'Saldo insuficiente',
+          'Seu saldo de cashback não é suficiente para aplicar este desconto.',
+        )
+        setLoading(false)
+        return
+      }
+
+      // 🔒 Passo 2: Continuar só se não houver conflito de loja
       const storeIds = Array.from(
         new Set(cartItems.map((item) => item.product.storeId)),
       )
@@ -151,6 +166,7 @@ export function Checkout() {
         return
       }
 
+      // 🔒 Passo 3: Montar payload confiável (sempre alinhado ao backend)
       const payload = {
         user_id: user.id,
         store_id: storeIds[0],
@@ -159,8 +175,9 @@ export function Checkout() {
           quantity: item.quantity,
           subtotal: parseFloat((item.quantity * item.product.price).toFixed(2)),
         })),
-        discountApplied: effectiveDiscount,
-        totalAmount: totalAmount,
+        discountApplied: useCashback ? Math.min(freshBalance, subtotal) : 0,
+        totalAmount:
+          subtotal - (useCashback ? Math.min(freshBalance, subtotal) : 0),
         use_cashback: useCashback,
       }
 
@@ -177,7 +194,7 @@ export function Checkout() {
         cashbackUsed: useCashback ? discountApplied : 0,
       })
     } catch (err) {
-      console.error('Aguarde o último pedido ser validado!', err)
+      console.error('Erro ao confirmar pedido:', err)
       const error = err as any
       Alert.alert(
         'Erro',
@@ -232,25 +249,41 @@ export function Checkout() {
           <Switch
             isChecked={useCashback}
             isDisabled={isCashbackSwitchDisabled}
-            onToggle={(value) => {
+            onToggle={async (value) => {
               if (value) {
-                if (cashbackBalance <= 0) {
+                try {
+                  // 🔒 Buscar saldo atualizado no backend
+                  const balanceRes = await api.get('/users/balance')
+                  const freshBalance = balanceRes.data.balance || 0
+                  setCashbackBalance(freshBalance)
+
+                  if (freshBalance <= 0) {
+                    toast.show({
+                      title: 'Saldo insuficiente',
+                      description:
+                        'Você não possui saldo de cashback disponível.',
+                    })
+                    return
+                  }
+
+                  const maxDiscount = Math.min(freshBalance, subtotal)
+                  setDiscountApplied(maxDiscount)
+                  setUseCashback(true)
+
                   toast.show({
-                    title: 'Saldo insuficiente',
-                    description:
-                      'Você não possui saldo de cashback disponível.',
+                    title: 'Cashback aplicado!',
+                    description: `Desconto de ${formatCurrency(
+                      maxDiscount,
+                    )} aplicado.`,
                   })
-                  return
+                } catch (error) {
+                  console.error('Erro ao validar saldo no backend:', error)
+                  toast.show({
+                    title: 'Erro',
+                    description:
+                      'Não foi possível verificar o saldo. Tente novamente.',
+                  })
                 }
-                const maxDiscount = Math.min(cashbackBalance, subtotal)
-                setDiscountApplied(maxDiscount)
-                setUseCashback(true)
-                toast.show({
-                  title: 'Cashback aplicado!',
-                  description: `Desconto de ${formatCurrency(
-                    maxDiscount,
-                  )} aplicado.`,
-                })
               } else {
                 setDiscountApplied(0)
                 setUseCashback(false)
@@ -261,6 +294,7 @@ export function Checkout() {
               }
             }}
           />
+
           <Text>Usar cashback como desconto</Text>
         </HStack>
 
