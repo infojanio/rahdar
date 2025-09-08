@@ -16,6 +16,7 @@ import {
   Divider,
   useToast,
   ArrowBackIcon,
+  Switch,
 } from 'native-base'
 import { Alert } from 'react-native'
 import { api } from '@services/api'
@@ -45,7 +46,6 @@ type CheckoutScreenRouteParams = {
 export function Checkout() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [applyingCashback, setApplyingCashback] = useState(false)
   const [useCashback, setUseCashback] = useState(false)
   const [cashbackBalance, setCashbackBalance] = useState(0)
   const [discountApplied, setDiscountApplied] = useState(0)
@@ -107,13 +107,12 @@ export function Checkout() {
               order.status === 'PENDING' && order.use_cashback === true,
           )
 
-          // Se houver pedido pendente com cashback, reseta estados locais
           if (hasPendingCashbackOrder) {
             setUseCashback(false)
             setDiscountApplied(0)
           }
         } catch (error) {
-          console.error('Erro ao carregar dados de saldo/pedidos:', error)
+          console.error('Erro ao carregar saldo/pedidos:', error)
         }
       }
 
@@ -138,48 +137,6 @@ export function Checkout() {
       setCartItems(formatted)
     }
   }, [cart])
-
-  const handleApplyCashback = async () => {
-    if (!user?.id) return
-
-    if (cashbackBalance <= 0) {
-      toast.show({
-        title: 'Saldo insuficiente',
-        description: 'Você não possui saldo de cashback disponível.',
-      })
-      return
-    }
-
-    setApplyingCashback(true)
-    try {
-      const maxDiscount = Math.min(cashbackBalance, totalAmount)
-      setDiscountApplied(maxDiscount)
-      setUseCashback(true)
-      toast.show({
-        title: 'Cashback aplicado!',
-        description: `Desconto de ${formatCurrency(
-          maxDiscount,
-        )} aplicado ao pedido.`,
-      })
-    } catch (error) {
-      console.error('Erro ao aplicar cashback:', error)
-      toast.show({
-        title: 'Erro',
-        description: 'Não foi possível aplicar o cashback.',
-      })
-    } finally {
-      setApplyingCashback(false)
-    }
-  }
-
-  const handleRemoveCashback = () => {
-    setDiscountApplied(0)
-    setUseCashback(false)
-    toast.show({
-      title: 'Cashback removido',
-      description: 'O desconto foi removido do seu pedido.',
-    })
-  }
 
   async function handleConfirmOrder() {
     if (!user?.id || cartItems.length === 0) return
@@ -221,7 +178,7 @@ export function Checkout() {
       })
     } catch (err) {
       console.error('Aguarde o último pedido ser validado!', err)
-      const error = err as any //corrigir msg erro de tipagem
+      const error = err as any
       Alert.alert(
         'Erro',
         error?.response?.data?.message || 'Erro ao confirmar o pedido',
@@ -231,7 +188,7 @@ export function Checkout() {
     }
   }
 
-  const isCashbackButtonDisabled = cashbackBalance < 0 || hasPending
+  const isCashbackSwitchDisabled = cashbackBalance <= 0 || hasPending
 
   return (
     <Box flex={1} bg="white" px={4} py={6}>
@@ -271,31 +228,46 @@ export function Checkout() {
           Saldo disponível: {formatCurrency(cashbackBalance)}
         </Text>
 
-        {useCashback ? (
-          <VStack space={2}>
-            <Text color="green.600">
-              Desconto aplicado: {formatCurrency(discountApplied)}
-            </Text>
-            <Button
-              size="sm"
-              variant="outline"
-              colorScheme="red"
-              onPress={handleRemoveCashback}
-              isLoading={applyingCashback}
-            >
-              Remover desconto
-            </Button>
-          </VStack>
-        ) : (
-          <Button
-            size="sm"
-            colorScheme="green"
-            onPress={handleApplyCashback}
-            isLoading={applyingCashback}
-            isDisabled={isCashbackButtonDisabled}
-          >
-            Usar cashback como desconto
-          </Button>
+        <HStack alignItems="center" space={3}>
+          <Switch
+            isChecked={useCashback}
+            isDisabled={isCashbackSwitchDisabled}
+            onToggle={(value) => {
+              if (value) {
+                if (cashbackBalance <= 0) {
+                  toast.show({
+                    title: 'Saldo insuficiente',
+                    description:
+                      'Você não possui saldo de cashback disponível.',
+                  })
+                  return
+                }
+                const maxDiscount = Math.min(cashbackBalance, subtotal)
+                setDiscountApplied(maxDiscount)
+                setUseCashback(true)
+                toast.show({
+                  title: 'Cashback aplicado!',
+                  description: `Desconto de ${formatCurrency(
+                    maxDiscount,
+                  )} aplicado.`,
+                })
+              } else {
+                setDiscountApplied(0)
+                setUseCashback(false)
+                toast.show({
+                  title: 'Cashback removido',
+                  description: 'O desconto foi removido do seu pedido.',
+                })
+              }
+            }}
+          />
+          <Text>Usar cashback como desconto</Text>
+        </HStack>
+
+        {useCashback && (
+          <Text color="green.600">
+            Desconto aplicado: {formatCurrency(discountApplied)}
+          </Text>
         )}
 
         {hasPending && (
@@ -344,9 +316,7 @@ export function Checkout() {
           colorScheme="blue"
           isLoading={loading}
           onPress={handleConfirmOrder}
-          isDisabled={
-            loading || cartItems.length === 0 || isCashbackButtonDisabled // se cashback estiver indisponível
-          }
+          isDisabled={loading || cartItems.length === 0 || hasPending}
           rounded="xl"
         >
           Confirmar Pedido
