@@ -85,7 +85,7 @@ export function Checkout() {
   useEffect(() => {
     setUseCashback(false)
     setDiscountApplied(0)
-  }, [])
+  }, [cart])
 
   useFocusEffect(
     useCallback(() => {
@@ -139,25 +139,20 @@ export function Checkout() {
   }, [cart])
 
   async function handleConfirmOrder() {
+    if (useCashback && cashbackBalance <= 0) {
+      Alert.alert(
+        'Erro',
+        'Você não possui saldo suficiente de cashback para este pedido.',
+      )
+      setUseCashback(false)
+      setDiscountApplied(0)
+      return
+    }
+
     if (!user?.id || cartItems.length === 0) return
     setLoading(true)
 
     try {
-      // 🔒 Passo 1: Revalidar saldo no backend antes de confirmar
-      const balanceRes = await api.get('/users/balance')
-      const freshBalance = balanceRes.data.balance || 0
-      setCashbackBalance(freshBalance)
-
-      if (useCashback && freshBalance < discountApplied) {
-        Alert.alert(
-          'Saldo insuficiente',
-          'Seu saldo de cashback não é suficiente para aplicar este desconto.',
-        )
-        setLoading(false)
-        return
-      }
-
-      // 🔒 Passo 2: Continuar só se não houver conflito de loja
       const storeIds = Array.from(
         new Set(cartItems.map((item) => item.product.storeId)),
       )
@@ -166,7 +161,11 @@ export function Checkout() {
         return
       }
 
-      // 🔒 Passo 3: Montar payload confiável (sempre alinhado ao backend)
+      const discount = useCashback
+        ? parseFloat(Math.min(cashbackBalance, subtotal).toFixed(2))
+        : 0
+      const total = parseFloat((subtotal - discount).toFixed(2))
+
       const payload = {
         user_id: user.id,
         store_id: storeIds[0],
@@ -175,9 +174,8 @@ export function Checkout() {
           quantity: item.quantity,
           subtotal: parseFloat((item.quantity * item.product.price).toFixed(2)),
         })),
-        discountApplied: useCashback ? Math.min(freshBalance, subtotal) : 0,
-        totalAmount:
-          subtotal - (useCashback ? Math.min(freshBalance, subtotal) : 0),
+        discountApplied: discount,
+        totalAmount: total,
         use_cashback: useCashback,
       }
 
@@ -187,19 +185,23 @@ export function Checkout() {
 
       const orderId = response.data.order?.id
       await clearCart()
+      setUseCashback(false)
+      setDiscountApplied(0)
 
       navigation.navigate('orderConfirmation', {
         orderId,
         cashbackEarned: cashbackToReceive,
-        cashbackUsed: useCashback ? discountApplied : 0,
+        cashbackUsed: useCashback ? discount : 0,
       })
     } catch (err) {
-      console.error('Erro ao confirmar pedido:', err)
+      console.error('Aguarde o último pedido ser validado!', err)
       const error = err as any
       Alert.alert(
         'Erro',
         error?.response?.data?.message || 'Erro ao confirmar o pedido',
       )
+      setUseCashback(false)
+      setDiscountApplied(0)
     } finally {
       setLoading(false)
     }
@@ -249,41 +251,25 @@ export function Checkout() {
           <Switch
             isChecked={useCashback}
             isDisabled={isCashbackSwitchDisabled}
-            onToggle={async (value) => {
+            onToggle={(value) => {
               if (value) {
-                try {
-                  // 🔒 Buscar saldo atualizado no backend
-                  const balanceRes = await api.get('/users/balance')
-                  const freshBalance = balanceRes.data.balance || 0
-                  setCashbackBalance(freshBalance)
-
-                  if (freshBalance <= 0) {
-                    toast.show({
-                      title: 'Saldo insuficiente',
-                      description:
-                        'Você não possui saldo de cashback disponível.',
-                    })
-                    return
-                  }
-
-                  const maxDiscount = Math.min(freshBalance, subtotal)
-                  setDiscountApplied(maxDiscount)
-                  setUseCashback(true)
-
+                if (cashbackBalance <= 0) {
                   toast.show({
-                    title: 'Cashback aplicado!',
-                    description: `Desconto de ${formatCurrency(
-                      maxDiscount,
-                    )} aplicado.`,
-                  })
-                } catch (error) {
-                  console.error('Erro ao validar saldo no backend:', error)
-                  toast.show({
-                    title: 'Erro',
+                    title: 'Saldo insuficiente',
                     description:
-                      'Não foi possível verificar o saldo. Tente novamente.',
+                      'Você não possui saldo de cashback disponível.',
                   })
+                  return
                 }
+                const maxDiscount = Math.min(cashbackBalance, subtotal)
+                setDiscountApplied(maxDiscount)
+                setUseCashback(true)
+                toast.show({
+                  title: 'Cashback aplicado!',
+                  description: `Desconto de ${formatCurrency(
+                    maxDiscount,
+                  )} aplicado.`,
+                })
               } else {
                 setDiscountApplied(0)
                 setUseCashback(false)
@@ -294,7 +280,6 @@ export function Checkout() {
               }
             }}
           />
-
           <Text>Usar cashback como desconto</Text>
         </HStack>
 
