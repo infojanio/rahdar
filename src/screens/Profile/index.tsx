@@ -134,7 +134,7 @@ export function Profile() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Saldo de Cashback</Text>
+          <Text style={styles.cardTitle}>Minha Carteira </Text>
 
           <View style={styles.balanceRow}>
             <View>
@@ -148,7 +148,7 @@ export function Profile() {
               </Text>
             </View>
             <View>
-              <Text style={styles.label}>Usado</Text>
+              <Text style={styles.label}>Utilizado</Text>
               <Text style={styles.valueUsed}>{totalUsed.toFixed(2)}</Text>
             </View>
           </View>
@@ -190,7 +190,7 @@ export function Profile() {
                       },
                     ]}
                   >
-                    {item.type === 'RECEIVE' ? '+' : '-'} R${' '}
+                    {item.type === 'RECEIVE' ? '+' : ''} R${' '}
                     {Number(item.amount ?? 0).toFixed(2)}
                   </Text>
                 </View>

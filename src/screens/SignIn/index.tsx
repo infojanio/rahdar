@@ -110,6 +110,7 @@ export function SignIn() {
           <View style={{ alignItems: 'center' }}>
             <LoginSvg height={120} width={120} />
           </View>
+
           <Text style={styles.header}>Cashback na compra!</Text>
 
           <Controller
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   link: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#e1093f',
     fontWeight: 'bold',
     marginLeft: 5,
