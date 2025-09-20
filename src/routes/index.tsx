@@ -1,10 +1,10 @@
-import { useContext, useEffect } from 'react'
-//contexto de navegação
+import React, { useEffect } from 'react'
 import { Box, useTheme } from 'native-base'
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { useAuth } from '@hooks/useAuth'
-
 import { AuthRoutes } from './auth.routes'
 import { AppRoutes } from './app.routes'
 import { Loading } from '@components/Loading'
@@ -12,8 +12,6 @@ import { Loading } from '@components/Loading'
 export function Routes() {
   const { colors } = useTheme()
   const { user, isLoadingUserStorageData } = useAuth()
-
-  console.log('Usuário logado =>', user)
 
   const theme = {
     ...DefaultTheme,
@@ -24,27 +22,27 @@ export function Routes() {
   }
 
   useEffect(() => {
-    //console.log('Usuário logado =>', user.name)
-  }, [user])
+    console.log('Routes - user:', user)
+    console.log('Routes - isLoadingUserStorageData:', isLoadingUserStorageData)
+  }, [user, isLoadingUserStorageData])
 
-  //verifica se os dados do user estão sendo carregados
   if (isLoadingUserStorageData) {
     return <Loading />
   }
 
   return (
-    <Box flex={1} bg="green.50">
-      {' '}
-      {/*garante não aparecer fundo branco na trasição da tela */}
-      <NavigationContainer theme={theme}>
-        {
-          user && user.id ? (
-            <AppRoutes />
-          ) : (
-            <AuthRoutes />
-          ) /*se não tiver logado vai p/ rota StackRoutes*/
-        }
-      </NavigationContainer>
-    </Box>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <NavigationContainer theme={theme}>
+          {/* 
+            pointerEvents="box-none" garante que esse Box não bloqueie toques para os filhos.
+            Se quiser testar se algo está sendo interceptado, troque para 'auto' e adicione background color temporário.
+          */}
+          <Box flex={1} bg="green.50" pointerEvents="box-none">
+            {user && user.id ? <AppRoutes /> : <AuthRoutes />}
+          </Box>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }

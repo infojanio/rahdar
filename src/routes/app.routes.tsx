@@ -40,6 +40,9 @@ import { Redirect } from '@screens/Redirect'
 import { ProductList } from '@screens/Product/ProductList'
 import { ProductBySubCategory } from '@screens/Product/ProductBySubCategory'
 import { ProductsBySubCategory } from '@screens/Product/ProductsBySubCategory'
+import { About } from '@screens/About'
+import { PrivacyPolicy } from '@screens/PrivacyPolicy'
+import { TermsOfUse } from '@screens/TermsOfUse'
 
 type AppRoutes = {
   home: { userId: string }
@@ -52,6 +55,9 @@ type AppRoutes = {
   profileEdit: undefined
   productList: undefined
   signUp: undefined
+  about: undefined
+  privacy: undefined
+  terms: undefined
   localization: { userId: string }
   searchProducts: { productId: string }
   checkout: { cart: StorageCartProps[] }
@@ -223,6 +229,28 @@ export function AppRoutes() {
         name="orderConfirmation"
         component={OrderConfirmation}
         //initialParams={{ orderId: '' }} // Definindo um valor inicial para evitar erro
+        options={{
+          tabBarButton: () => null, // oculta da tab bar
+        }}
+      />
+
+      <Screen
+        name="about"
+        component={About}
+        options={{
+          tabBarButton: () => null, // oculta da tab bar
+        }}
+      />
+      <Screen
+        name="privacy"
+        component={PrivacyPolicy}
+        options={{
+          tabBarButton: () => null, // oculta da tab bar
+        }}
+      />
+      <Screen
+        name="terms"
+        component={TermsOfUse}
         options={{
           tabBarButton: () => null, // oculta da tab bar
         }}

@@ -6,10 +6,8 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   TextInput,
   Image,
-  Alert,
 } from 'react-native'
 import { Input } from '@components/Input' // Seu componente Input estilizado
 import MarketPng from '@assets/rahdar.png'
@@ -20,12 +18,12 @@ import Feather from 'react-native-vector-icons/Feather'
 import { useAuth } from '@hooks/useAuth'
 import { AppError } from '@utils/AppError'
 import { useToast } from 'native-base'
-
 import { useForm, Controller } from 'react-hook-form'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { api } from '@services/api'
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 
 type FormDataProps = {
   email: string
@@ -37,12 +35,10 @@ const signInSchema = yup.object({
   password: yup
     .string()
     .required('Informe a senha')
-    .min(6, ' Estão faltando caracteres!'),
+    .min(6, 'Estão faltando caracteres!'),
 })
 
 export function SignIn() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | undefined>('')
@@ -52,7 +48,6 @@ export function SignIn() {
   const navigationApp = useNavigation<AppNavigatorRoutesProps>()
   const toast = useToast()
 
-  //criando controle para o formulário
   const {
     control,
     handleSubmit,
@@ -69,16 +64,13 @@ export function SignIn() {
     try {
       setIsLoading(true)
 
-      // 1. Faz login e obtém o usuário autenticado
       const user = await signIn(email, password)
-
-      // 2. Verifica se a localização existe
       const response = await api.get(`/users/${user.id}/location`)
 
       if (response?.data?.latitude && response?.data?.longitude) {
-        navigationApp.navigate('home', { userId: user.id }) // Já tem localização, vai para Home
+        navigationApp.navigate('home', { userId: user.id })
       } else {
-        navigationApp.navigate('localization', { userId: user.id }) // Redireciona para Location
+        navigationApp.navigate('localization', { userId: user.id })
       }
     } catch (error) {
       const isAppError = error instanceof AppError
@@ -99,12 +91,12 @@ export function SignIn() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={30}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
+      <KeyboardAwareScrollView
         contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
+        enableOnAndroid
       >
         <View style={styles.formContainer}>
           <View style={{ alignItems: 'center' }}>
@@ -159,10 +151,14 @@ export function SignIn() {
           {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
           <TouchableOpacity
+            activeOpacity={0.7}
             style={styles.button}
             onPress={handleSubmit(handleSignIn)}
+            disabled={isLoading}
           >
-            <Text style={styles.buttonText}>Entrar</Text>
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Carregando...' : 'Entrar'}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.footer}>
@@ -171,6 +167,7 @@ export function SignIn() {
               <Text style={styles.link}>Cadastre-se</Text>
             </TouchableOpacity>
           </View>
+
           <View style={{ alignItems: 'center', marginTop: 8 }}>
             <Image
               style={{ height: 30, width: 160 }}
@@ -180,7 +177,7 @@ export function SignIn() {
             />
           </View>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </KeyboardAvoidingView>
   )
 }
