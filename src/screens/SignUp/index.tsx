@@ -17,7 +17,6 @@ import * as ImagePicker from 'expo-image-picker'
 
 import { VStack, Center, Text, Icon, IconButton, useToast } from 'native-base'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
-import { Linking } from 'react-native'
 
 import { Input } from '@components/Input'
 import { Button } from '@components/Button'
@@ -25,7 +24,7 @@ import { Button } from '@components/Button'
 import { AppError } from '@utils/AppError'
 import { useAuth } from '@hooks/useAuth'
 import { api } from '@services/api'
-import { AuthNavigatorRoutesProps } from '@routes/auth.routes'
+import { AppNavigatorRoutesProps } from '@routes/app.routes'
 import isValidCPF from '@utils/isValidCPF'
 
 // ---------- CONFIG CLOUDINARY ----------
@@ -155,7 +154,7 @@ export function SignUp() {
   const scrollViewRef = useRef<ScrollView>(null)
   const toast = useToast()
   const { signIn, userId } = useAuth()
-  const navigation = useNavigation<AuthNavigatorRoutesProps>()
+  const navigation = useNavigation<AppNavigatorRoutesProps>()
 
   const {
     control,
@@ -212,10 +211,10 @@ export function SignUp() {
         if (latitude && longitude) {
           navigation.navigate('home', { userId })
         } else {
-          //   navigation.navigate('localization', { userId: user.id })
+          navigation.navigate('localization', { userId: user.id })
         }
       } catch {
-        //navigation.navigate('localization', { userId: user.id })
+        navigation.navigate('localization', { userId: user.id })
       }
     } catch (error) {
       setIsLoading(false)
@@ -535,29 +534,6 @@ export function SignUp() {
             onPress={handleSubmit(handleSignUp)}
             isDisabled={avatarUploading || isLoading}
           />
-
-          {/* Aviso de Política de Privacidade */}
-          <Center mt={6}>
-            <Text fontSize="xs" color="gray.500" textAlign="center">
-              Ao criar a conta, você concorda com nossos{'\n'}
-              <Text
-                fontWeight="bold"
-                color="blue.600"
-                onPress={() => navigation.navigate('terms')}
-              >
-                Termos de Uso
-              </Text>{' '}
-              e nossa{' '}
-              <Text
-                fontWeight="bold"
-                color="blue.600"
-                onPress={() => navigation.navigate('privacy')}
-              >
-                Política de Privacidade
-              </Text>
-              .
-            </Text>
-          </Center>
         </VStack>
       </ScrollView>
     </KeyboardAvoidingView>

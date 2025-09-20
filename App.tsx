@@ -6,7 +6,6 @@ import {
   Roboto_400Regular,
   Roboto_700Bold,
 } from '@expo-google-fonts/roboto'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 
 import { Loading } from '@components/Loading'
 import { Routes } from './src/routes'
@@ -20,42 +19,38 @@ export default function App() {
   const [fontsLoaded] = useFonts({ Roboto_400Regular, Roboto_700Bold })
 
   useEffect(() => {
-    checkAndApplyOtaNow()
-    const unwire = wireOtaOnAppState()
+    checkAndApplyOtaNow() // checa atualizações no launch
+    const unwire = wireOtaOnAppState() // checa quando volta ao foco
     return () => unwire()
   }, [])
 
   useEffect(() => {
     const hideNavBar = async () => {
       if (Platform.OS === 'android') {
-        try {
-          await NavigationBar.setVisibilityAsync('hidden')
-          await NavigationBar.setBehaviorAsync('overlay-swipe')
-          await NavigationBar.setBackgroundColorAsync('transparent')
-        } catch (e) {
-          console.log('NavigationBar error:', e)
-        }
+        // Deixa a barra oculta e só aparece ao deslizar a borda
+        await NavigationBar.setVisibilityAsync('hidden')
+        await NavigationBar.setBehaviorAsync('overlay-swipe')
+        // cor transparente quando aparecer
+        await NavigationBar.setBackgroundColorAsync('transparent')
       }
     }
     hideNavBar()
   }, [])
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <NativeBaseProvider>
-          <CartProvider>
-            <StatusBar
-              barStyle="dark-content"
-              translucent
-              backgroundColor="transparent"
-            />
-            <AuthContextProvider>
-              {fontsLoaded ? <Routes /> : <Loading />}
-            </AuthContextProvider>
-          </CartProvider>
-        </NativeBaseProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <NativeBaseProvider>
+        <CartProvider>
+          <StatusBar
+            barStyle="dark-content"
+            translucent
+            backgroundColor="transparent"
+          />
+          <AuthContextProvider>
+            {fontsLoaded ? <Routes /> : <Loading />}
+          </AuthContextProvider>
+        </CartProvider>
+      </NativeBaseProvider>
+    </SafeAreaProvider>
   )
 }

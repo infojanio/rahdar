@@ -9,16 +9,12 @@ import { SignIn } from '@screens/SignIn'
 import { SignUp } from '@screens/SignUp'
 
 import { Home } from '@screens/Home'
-import { PrivacyPolicy } from '@screens/PrivacyPolicy'
-import { TermsOfUse } from '@screens/TermsOfUse'
 
 type AuthRoutes = {
   home: { userId: string }
   signin: undefined
   signup: undefined
   localization: undefined
-  privacy: undefined
-  terms: undefined
 }
 
 export type AuthNavigatorRoutesProps = NativeStackNavigationProp<AuthRoutes>
@@ -33,8 +29,6 @@ export function AuthRoutes() {
 
       <Screen name="home" component={Home} />
       <Screen name="localization" component={Localization} />
-      <Screen name="privacy" component={PrivacyPolicy} />
-      <Screen name="terms" component={TermsOfUse} />
     </Navigator>
   )
 }

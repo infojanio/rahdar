@@ -3,9 +3,6 @@
     "name": "rahdar",
     "slug": "rahdar",
     "version": "1.0.0",
-    "experiments": {
-      "newArchEnabled": true
-    },
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",
     "androidStatusBar": {
