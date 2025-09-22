@@ -346,8 +346,10 @@ export function ProfileEdit() {
                     type={'cpf'}
                     value={value ?? ''}
                     onChangeText={onChange}
-                    style={{ flex: 1, fontSize: 16 }}
+                    style={{ flex: 1, fontSize: 14 }}
                     keyboardType="numeric"
+                    placeholder="Digite seu CPF" // 👈 aqui
+                    placeholderTextColor="#999"
                   />
                 </View>
               )}
@@ -388,8 +390,10 @@ export function ProfileEdit() {
                     }}
                     value={value ?? ''}
                     onChangeText={onChange}
-                    style={{ flex: 1, fontSize: 16, height: 48 }}
+                    style={{ flex: 1, fontSize: 14, height: 48 }}
                     keyboardType="phone-pad"
+                    placeholder="Digite seu telefone" // 👈 aqui
+                    placeholderTextColor="#999"
                   />
                 </View>
               )}

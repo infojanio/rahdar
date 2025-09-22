@@ -1,8 +1,17 @@
 import React from 'react'
 import { Box, Text, Icon, VStack, HStack, Link } from 'native-base'
 import { MaterialIcons } from '@expo/vector-icons'
+import { TouchableOpacity } from 'react-native'
+import { AppNavigatorRoutesProps } from '@routes/app.routes'
+import { useNavigation } from '@react-navigation/native'
 
 export function CashbackRegulationCard() {
+  const navigation = useNavigation<AppNavigatorRoutesProps>()
+
+  function handleOpenAbout() {
+    navigation.navigate('about')
+  }
+
   return (
     <Box
       bg="white"
@@ -15,6 +24,20 @@ export function CashbackRegulationCard() {
       borderWidth={1}
       borderColor="primary.100"
     >
+      <TouchableOpacity
+        style={{
+          marginLeft: 8,
+          marginBottom: 16,
+          paddingVertical: 4,
+          borderBottomWidth: 1,
+          borderBottomColor: '#E5E7EB',
+        }}
+        onPress={() => handleOpenAbout()}
+      >
+        <Text style={{ fontSize: 16, color: '#374151' }}>
+          ℹ️ Sobre o sistema
+        </Text>
+      </TouchableOpacity>
       <HStack space={2} alignItems="center" mb={3}>
         <Icon as={MaterialIcons} name="info" size="md" color="primary.500" />
         <Text fontSize="lg" fontWeight="bold" color="primary.500">

@@ -13,7 +13,7 @@ import {
 } from 'react-native'
 import { Input } from '@components/Input' // Seu componente Input estilizado
 import MarketPng from '@assets/rahdar.png'
-import LoginSvg from '@assets/login.svg'
+import IakiPng from '@assets/logoiaki.png'
 import { useNavigation } from '@react-navigation/native'
 import { AuthNavigatorRoutesProps } from '@routes/auth.routes'
 import Feather from 'react-native-vector-icons/Feather'
@@ -37,7 +37,7 @@ const signInSchema = yup.object({
   password: yup
     .string()
     .required('Informe a senha')
-    .min(6, ' Estão faltando caracteres!'),
+    .min(6, 'Estão faltando caracteres!'),
 })
 
 export function SignIn() {
@@ -108,9 +108,14 @@ export function SignIn() {
       >
         <View style={styles.formContainer}>
           <View style={{ alignItems: 'center' }}>
-            <LoginSvg height={120} width={120} />
+            <Text style={styles.header}>Clube de vantagens</Text>
+            <Image
+              style={{ height: 30, width: 160, marginBottom: 16 }}
+              alt="Logo Rahdar"
+              source={MarketPng}
+              borderRadius={1}
+            />
           </View>
-          <Text style={styles.header}>Cashback na compra!</Text>
 
           <Controller
             control={control}
@@ -172,9 +177,9 @@ export function SignIn() {
           </View>
           <View style={{ alignItems: 'center', marginTop: 8 }}>
             <Image
-              style={{ height: 30, width: 160 }}
+              style={{ height: 140, width: 190 }}
               alt="Logo da Loja"
-              source={MarketPng}
+              source={IakiPng}
               borderRadius={1}
             />
           </View>
@@ -201,9 +206,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   header: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginTop: 10,
+    marginBottom: 10,
     color: '#333',
     textAlign: 'center',
   },

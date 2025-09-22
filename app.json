@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "rahdar",
+    "name": "Clube +Rahdar",
     "slug": "rahdar",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",
     "androidStatusBar": {
@@ -48,7 +48,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Precisamos acessar suas fotos para anexar comprovantes."
+          "photosPermission": "Precisamos acessar suas fotos para anexar seu avatar."
         }
       ],
       [

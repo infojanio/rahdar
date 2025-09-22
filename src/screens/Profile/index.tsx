@@ -134,7 +134,7 @@ export function Profile() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Saldo de Cashback</Text>
+          <Text style={styles.cardTitle}>💰 Meus cashbacks </Text>
 
           <View style={styles.balanceRow}>
             <View>
@@ -148,7 +148,7 @@ export function Profile() {
               </Text>
             </View>
             <View>
-              <Text style={styles.label}>Usado</Text>
+              <Text style={styles.label}>Utilizado</Text>
               <Text style={styles.valueUsed}>{totalUsed.toFixed(2)}</Text>
             </View>
           </View>
@@ -168,7 +168,7 @@ export function Profile() {
         </View>
 
         <View style={styles.summary}>
-          <Text style={styles.summaryTitle}>Extrato de Cashback</Text>
+          <Text style={styles.summaryTitle}>Extrato </Text>
 
           {statement.length === 0 ? (
             <Text style={styles.summaryLabel}>
