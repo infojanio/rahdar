@@ -14,12 +14,13 @@ import {
 import { Input } from '@components/Input' // Seu componente Input estilizado
 import MarketPng from '@assets/rahdar.png'
 import IakiPng from '@assets/logoiaki.png'
+import clubePng from '@assets/cashbacks.png'
 import { useNavigation } from '@react-navigation/native'
 import { AuthNavigatorRoutesProps } from '@routes/auth.routes'
 import Feather from 'react-native-vector-icons/Feather'
 import { useAuth } from '@hooks/useAuth'
 import { AppError } from '@utils/AppError'
-import { useToast } from 'native-base'
+import { Center, useToast, VStack } from 'native-base'
 
 import { useForm, Controller } from 'react-hook-form'
 import * as yup from 'yup'
@@ -106,84 +107,103 @@ export function SignIn() {
         contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.formContainer}>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={styles.header}>Clube de vantagens</Text>
+        <VStack>
+          <Center
+            ml={-4}
+            mr={-4}
+            bg={'gray.200'}
+            borderTopRadius={'3xl'}
+            mb={-2}
+          >
             <Image
-              style={{ height: 30, width: 160, marginBottom: 16 }}
-              alt="Logo Rahdar"
-              source={MarketPng}
+              style={{ height: 220, width: 300, marginBottom: 2 }}
+              alt="clube"
+              source={clubePng}
               borderRadius={1}
             />
-          </View>
+          </Center>
 
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                placeholder="Email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                onChangeText={onChange}
-                value={value}
-                errorMessage={errors.email?.message}
+          <View style={styles.formContainer}>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.header}>Clube de vantagens</Text>
+              <Image
+                style={{ height: 30, width: 160, marginBottom: 16 }}
+                alt="Logo Rahdar"
+                source={MarketPng}
+                borderRadius={1}
               />
-            )}
-          />
+            </View>
 
-          <View style={styles.passwordWrapper}>
             <Controller
               control={control}
-              name="password"
+              name="email"
               render={({ field: { onChange, value } }) => (
-                <TextInput
-                  placeholder="Senha"
-                  secureTextEntry={!showPassword}
-                  style={styles.passwordInput}
-                  placeholderTextColor="#999"
+                <Input
+                  placeholder="Email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                   onChangeText={onChange}
                   value={value}
+                  errorMessage={errors.email?.message}
                 />
               )}
             />
 
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Feather
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={24}
-                color="#999"
+            <View style={styles.passwordWrapper}>
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    placeholder="Senha"
+                    secureTextEntry={!showPassword}
+                    style={styles.passwordInput}
+                    placeholderTextColor="#999"
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                )}
               />
+
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Feather
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="#999"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {errorMessage && (
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            )}
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleSubmit(handleSignIn)}
+            >
+              <Text style={styles.buttonText}>Entrar</Text>
             </TouchableOpacity>
-          </View>
 
-          {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleSubmit(handleSignIn)}
-          >
-            <Text style={styles.buttonText}>Entrar</Text>
-          </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Não tem uma conta?</Text>
-            <TouchableOpacity onPress={handleNewAccount}>
-              <Text style={styles.link}>Cadastre-se</Text>
-            </TouchableOpacity>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Não tem uma conta?</Text>
+              <TouchableOpacity onPress={handleNewAccount}>
+                <Text style={styles.link}>Cadastre-se</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ alignItems: 'center', marginTop: 8 }}>
+              <Image
+                style={{ height: 60, width: 104 }}
+                alt="Logo IAki"
+                source={IakiPng}
+                borderRadius={1}
+              />
+            </View>
           </View>
-          <View style={{ alignItems: 'center', marginTop: 8 }}>
-            <Image
-              style={{ height: 140, width: 190 }}
-              alt="Logo da Loja"
-              source={IakiPng}
-              borderRadius={1}
-            />
-          </View>
-        </View>
+        </VStack>
       </ScrollView>
     </KeyboardAvoidingView>
   )
@@ -198,7 +218,7 @@ const styles = StyleSheet.create({
   formContainer: {
     backgroundColor: 'white',
     borderRadius: 10,
-    padding: 20,
+    padding: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -206,7 +226,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   header: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
     marginBottom: 10,
